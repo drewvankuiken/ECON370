@@ -1,0 +1,434 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Title: ECON 370 Syllabus                                                     %
+% Author: DVK                                                                  %
+% Date: Last Updated July 31, 2024                                             %
+% Notes:                                                                       %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%==============================================================================%
+%                              DOCUMENT PREPARATION                            %
+%==============================================================================%
+
+
+%------------------------------------------------------------------------------%
+%                       Document Class and Package Statements                  %
+%------------------------------------------------------------------------------%
+
+\documentclass[11pt]{article}
+\usepackage{fullpage, xspace}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage[parfill]{parskip}
+\usepackage[left=1in,              % set margin on left of page
+			top=1in,               % set margin on top of page
+			right=1in,             % set margin on right of page
+			bottom=1in,            % set margin on bottom of page
+			headheight=3ex,        % set header height
+			headsep=3ex]{geometry} % set header separation from document
+
+%------------------------------------------------------------------------------%
+%                            Create Toggles for Sections                       %
+%------------------------------------------------------------------------------%
+% Packages needed to create section toggles
+\usepackage{environ}
+\usepackage{etoolbox}
+
+% Create environment that can be toggled
+\NewEnviron{ToggleSect}[1]{%
+  \iftoggle{#1}{\BODY}{}%
+}
+
+% Create toggles for policies
+\newtoggle{MaskPolicy}    % Toggle for if masks are required
+\newtoggle{SubmissionIDs} % Toggle for anonymous submission IDs
+\newtoggle{PSgrading}     % Toggle for grading Problem Sets on check scale.
+% Set true or talse for created toggles
+%%% To toggle on, use \toggletrue{ToggleName}
+%%% To toggle off, use \togglefalse{ToggleName}
+
+\togglefalse{MaskPolicy}
+\toggletrue{SubmissionIDs}
+\togglefalse{PSgrading}
+
+%------------------------------------------------------------------------------%
+%                            Hyperlink and Color Setup                         %
+%------------------------------------------------------------------------------%
+\usepackage{array, xcolor}
+\usepackage{color,hyperref}
+
+\definecolor{CarolinaBlue}{RGB}{75, 156, 211} %define Carolina blue
+
+%hyperlink setup
+\hypersetup{colorlinks=true,          % allows links to be colored
+			breaklinks=true,          % allows links to be broken across lines
+			linkcolor=CarolinaBlue,   % set (internal) link color
+			urlcolor=CarolinaBlue,    % set url (external link) color
+			anchorcolor=CarolinaBlue, % set color of user links
+			citecolor=black}          % set color of bibliography citations
+			
+			
+%------------------------------------------------------------------------------%
+%                         Format Section and Subsections                       %
+%------------------------------------------------------------------------------%
+\usepackage{sectsty}                               % Section formatting package
+\sectionfont{\normalfont\Large\bfseries\underline} % Set SECTION formatting
+\subsectionfont{\normalfont\large\bfseries}        % Set SUBSECTION formatting
+
+
+%------------------------------------------------------------------------------%
+%                          Course Information/Title Setup                      %
+%------------------------------------------------------------------------------%
+
+\newcommand{\CourseNum}{370\xspace}         %Set course number
+\newcommand{\SemSeason}{Fall\xspace}        %Set semester as Spring or Fall
+\newcommand{\SemYear}{2024\xspace}          %Set semester year
+\newcommand{\Semester}{\SemSeason\SemYear}  %Set semester year
+
+% Modify Course title, instructor name, semester here %%%%%%%%
+\title{ECON \CourseNum: Economic Applications of Data Science} %Course Title
+\author{Drew Van Kuiken}                                            %Instructor Name
+\date{\SemSeason \SemYear}                                     %Semester Date
+
+
+%------------------------------------------------------------------------------%
+%                            Remaining Packages Needed                         %
+%------------------------------------------------------------------------------%
+
+\usepackage[sc]{mathpazo}
+\linespread{1.05} % Palatino needs more leading (space between lines)
+\usepackage[T1]{fontenc}
+\usepackage{setspace}
+\usepackage{multicol}
+%\usepackage{indentfirst}
+\usepackage{fancyhdr,lastpage}
+\pagestyle{fancy}
+\usepackage{lastpage}
+\usepackage{amsmath, amssymb}
+\usepackage{layout}
+\usepackage{booktabs}
+
+
+%------------------------------------------------------------------------------%
+%                                  Header Setup                                %
+%------------------------------------------------------------------------------%
+\lhead{\footnotesize \Semester}
+\chead{}
+\rhead{\footnotesize ECON \CourseNum: Drew Van Kuiken}
+
+%------------------------------------------------------------------------------%
+%                                   Footer Setup                               %
+%------------------------------------------------------------------------------%
+\lfoot{}
+\cfoot{\small \thepage/\pageref*{LastPage}}
+\rfoot{}
+
+
+%==============================================================================%
+%                                  DOCUMENT START                              %
+%==============================================================================%
+\begin{document}
+\maketitle
+
+%------------------------------------------------------------------------------%
+%                         Basic Contact and Course Information                 %
+%------------------------------------------------------------------------------%
+\begin{tabular*}{\textwidth}{@{\extracolsep{\fill}}lr}
+
+% Email and Website
+E-mail: \href{mailto:drew.van.kuiken@unc.edu}{\tt\bf drew.van.kuiken@unc.edu} \\ % & Web: \href{https://alexmarsh.io/teaching}{\tt\bf alexmarsh.io/teaching}\\
+
+% Class Hours and Office Hours
+Class Hours: MWF 1:25 PM - 2:15 PM & Office Hours: MTh 2:15 PM - 3:15 PM \\
+
+% Class Room Location and Office Location
+Class Room: Gardner 307 & Office: Gardner Hall 410 \\
+\hline
+\end{tabular*}
+\vspace{2 mm}
+
+%------------------------------------------------------------------------------%
+%                               Course Description                             %
+%------------------------------------------------------------------------------%
+\section*{Course Description}
+ECON \CourseNum is intended to provide a broad-based introduction to numerical and data science methods commonly used in economics. The course will first introduce students to the R programming language, assuming no prior experience. Subsequent lectures, using R, will provide students an opportunity to apply this knowledge on real-world data to achieve an economic objective.  The methods used in these applications will include (but are not limited to): collecting, cleaning, merging, processing, and visualizing data, descriptive analysis, optimization, and supervised/unsupervised statistical learning. In addition, the course has an experiential component that connects students with industry leaders in economic applications of data-science through a series of on-campus events.
+
+
+%------------------------------------------------------------------------------%
+%                                 Course Goals                                 %
+%------------------------------------------------------------------------------%
+\section*{Course Goals}
+My teaching goals for this course are as follows:
+
+\begin{enumerate}
+    \item Teach students how to competently program in R with good style,
+    \item Teach students how to think and approach problems from a computational perspective,
+    \item Teach students basic data science skills including data visualization and basic models,
+    \item Imbue students with a desire to learn more about econometrics and data science.
+\end{enumerate}
+
+
+%------------------------------------------------------------------------------%
+%                              Learning Objective                              %
+%------------------------------------------------------------------------------%
+\section*{Learning Objectives}
+Upon successfully completing ECON \CourseNum, students should be able to do the following:
+
+\begin{enumerate}
+    \item Be able to write functioning, readable, and aesthetically pleasing code in the R programming language, 
+    \item Given raw data, be able to manipulate the data into the correct format needed for an analysis,
+    \item Given data and a research question, be able to create a exploratory data visualization in the right format to get at answering the question,
+    \item Be able to communicate results to a non-technical audience.
+\end{enumerate}
+
+
+%------------------------------------------------------------------------------%
+%                                Prerequisites                                 %
+%------------------------------------------------------------------------------%
+\section*{Prerequisites and Requirements}
+ECON 101 and a declared economics major.
+
+%------------------------------------------------------------------------------%
+%                                Course Materials                              %
+%------------------------------------------------------------------------------%
+\section*{Course Materials}
+
+\begin{itemize}
+
+    % Textbooks and Reading Materials
+    \item \textbf{Recommended Supplemental Textbooks:} 
+    I will be pulling readings from various free textbook online. 
+    \begin{itemize}
+        \item \href{https://r4ds.hadley.nz/}{\textit{R for Data Science (2e)} by Hadley Wickham, Mine \c{C}etinkaya-Rundel and Garrett Grolemund (WCG)} [Best for learning \textbf{dplyr} package]
+        \item \href{https://rstudio-education.github.io/hopr/}{\textit{Hands-On Programming with R} by Garrett Grolemun (G)} [Best for learning \textbf{base R}]
+        \item \href{https://web.stanford.edu/~hastie/ISLRv2_website.pdf}{\textit{An Introduction to Statistical Learning with Applications in R} by Gareth James, Daniela Witten, Trevor Hastie, and Robert Tibshirani (JWHT)} [statistics textbook, examples in R]
+        \item \textit{Learning R} by Richard Cotton (RC) [Older; good for learning \textbf{base R}]
+    \end{itemize}
+    
+    % R and RStudio
+    \item \textbf{R and RStudio:} We will be using R as our programming language. R is widely used in the business world and academia and has an excellent Integrated Development Environment (IDE) called RStudio. To install R, go to \href{https://cran.r-project.org}{\tt\bf https://cran.r-project.org} and download the correct distribution for your machine. After installing R, you can install Rstudio by going to \href{https://www.rstudio.com/products/rstudio/download/}{\tt\bf https://www.rstudio.com/products/rstudio/download/} and downloading the free version of RStudio Desktop.
+    
+    % Recorded YouTube Recitation
+    %\item \textbf{Recorded YouTube Recitation Sessions:} I wish this class could have a recitation section; there is a lot of material that needs to be covered that is not suited for a traditional lecture. However, this course is not big enough (nor should it be big enough) for the Graduate School to allow us a full TA. As such, I have recorded a bunch of short lectures of the type of material we would cover in a recitation section that you are responsible for watching. These are apart of the required readings, and you should watch them. These videos will get down in the weeds and cover details that I don't want to waste class time on. To find the videos, please follow \href{https://www.youtube.com/channel/UCbknPag-RS6tSptYAJaIsJg}{\tt\bf this link.}
+    
+    % Canvas
+    \item \textbf{Canvas:} All announcements, materials, assignments, grades, etc will be posted on the course's Canvas site. Please visit \href{https://uncch.instructure.com/}{\tt\bf uncch.instructure.com}. I will also be posting all materials on the \href{https://github.com/drewvankuiken/ECON370}{\tt\bf Github repo} for the course. You may access them however you wish, but assignments will need to be submitted on Canvas. {\tt\bf  \emph{Submitted assignments will only be accepted when submitted on Canvas. No exceptions.}} Any assignment that we have will be able to be submitted on Canvas. If you are having trouble submitting an assignment, it is likely something is incorrect with the submission (e.g. unnecessarily large file, a weird file type, etc). See the course policies below for more details.
+\end{itemize}
+
+
+%------------------------------------------------------------------------------%
+%                                Course Content                                %
+%------------------------------------------------------------------------------%
+\section*{Course Content}
+The course will cover the following topics using illustrative economic applications. While this is the broad outline of the course, the exact details are subject to change based on interest and background.
+
+
+\begin{itemize}
+	% Module 1
+	\item Module 1: Introduction (week 1)
+	\begin{itemize}
+    	\item Introduction to course, the syllabus, and R
+	\end{itemize}
+	
+	% Module 2
+	\item Module 2: R programming (weeks 2-6)
+	\begin{itemize}
+    	\item Data types and structures
+    	\item Objects and the environment
+    	\item Logic, loops, and control flow
+    	\item Functions and miscellaneous topics (dates, regular expressions, etc)
+    	\item Programming applications (optimization, simulation, numerical methods)
+	\end{itemize} 
+	
+	% Module 3
+	\item Module 3: Data Acumen (weeks 8-11)
+	\begin{itemize}
+    	\item Structured and unstructured data
+    	\item Loading, cleaning, validation, merging, and processing data
+	\end{itemize}  
+	
+	% Module 4
+	\item Module 4: Data Science and Visualization (weeks 12-15)
+	\begin{itemize}
+    	\item Descriptive analysis
+    	\item Visualizing and plotting data (spatial, etc)
+    	\item Clustering, classification, etc
+	\end{itemize}   
+\end{itemize}
+
+Module 1 is a simple introduction to the course, including understanding R, RStudio, R scripts, and RMarkdown documents. That being said, understanding the topics covered in this part will be important for doing well in the course. Students easily confuse R and RStudio as well as R scripts and RMarkdown documents, to the detriment of their learning.
+
+Module 2 is where we will spend a majority of our time. 
+
+%------------------------------------------------------------------------------%
+%                              Course Assessments                              %
+%------------------------------------------------------------------------------%
+\section*{Assessments}
+The following items will contribute to your overall grade:
+
+% Assessment List
+\begin{itemize}
+    
+    % Problem Sets
+    \item Problem Sets (60\%): A total of five homework assignments counting equally. Assignments are due before class on the due date. These problem sets will likely be time intensive, so please plan for enough time to complete the assignment. I will make sure you have enough time between release date and submission date. There will be a 15 minute grace period in case there are any submission issues. The lowest assignment will be dropped. Late assignments will receive a score of zero. 
+    
+    % Grading Scheme for Problem Sets
+    \begin{ToggleSect}{PSgrading}
+    Problem sets \textit{will not} be graded numerically. Instead, they will be graded on a \checkmark + / \checkmark / \checkmark - system. At the end of the class, this will be converted into a number system. For details, please see the \hyperref[subsec:PSgrading]{Problem Set Grading System} subsection in the \hyperref[sec:Policies]{Course Policies}.
+    \end{ToggleSect}
+    
+    % Participation
+    \item Participation (10\%): Regular participation in class discussions and attendance at speaker events. I will be tracking participation at the start of each class. If you attend 75\% of the lectures, you are guaranteed at least half (5\% total) of the participation points. The rest are determined via a linear scale between 75\% and 100\% plus or minus how well I believe you are participating in class. This is a small class in which I can get to know all of you, and I want that to be the case. Asking questions, coming to office hours, and engaging with the material will serve you greatly both in this class, and for your time after this course.
+    
+    \begin{itemize}
+    	\item Attendance of Industry Talks: Part of the DATA credential involves attending industry talks. There will be two talks this semester, timing TBD. To get the credential, your attendance is expected, and attendance to these talks is \textit{separate} to your participation in class, even though attendance of these events will count towards your participation in this class.
+    \end{itemize}
+    
+    % Final Project
+    \item Final Project (30\%): Students will present their findings on an economic application of data science (of their choosing) during the scheduled final time. More details on this to come. Group submissions are \textbf{not} allowed for this project. 
+\end{itemize}
+
+% Grading Scale
+The UNC grading scale will be used. I reserve the right to curve grades if needed, but it will only ever be in the benefit of the student. The table below shows the grading scale, which corresponds to the traditional UNC undergraduate grading scale. To read the table, the percentage in each cell corresponds to the cut-off (or minimum percentage) for each letter grade minus/neutral/plus combination. These values are \textit{inclusive}. So an A- corresponds to a percentage greater than or equal to 90\% and \textit{strictly less than} 93\%. A B+ corresponds to a percentage greater than 87\% and \textit{strictly less than} 90\%. And so on. 
+
+% Grade Cut-Off Table
+\begin{table}[H]
+\centering
+\begin{tabular}{@{}cccc@{}} \toprule
+\multicolumn{4}{c}{Cut-Offs For Letter Grades} \\ \cmidrule(r){1-4}
+Letter Grade & ( - ) & (  ) & ( + ) \\ \midrule
+A & 90\% & 93\% & NA \\ 
+B & 80\% & 83\% & 87\% \\
+C & 70\% & 73\% & 77\% \\
+D & NA & 60\% & 65\% \\
+F & NA & 0\% & NA \\ \bottomrule
+\end{tabular}
+\end{table}
+
+%------------------------------------------------------------------------------%
+%                                Course Schedule                               %
+%------------------------------------------------------------------------------%
+
+% MAYBE ADD THIS LATER. STILL SPLIT IF THIS SHOULD BE IN THE SYLLABUS 
+
+  
+\newpage
+
+
+%------------------------------------------------------------------------------%
+%                                Course Policies                               %
+%------------------------------------------------------------------------------%
+\section*{Course Policies}\label{sec:Policies}
+
+% Communication Channels
+\subsection*{Communication Channels}
+Feel free to contact me with any questions. I will try to respond as soon as possible. If I do not respond within twenty-four hours, feel free to send a follow-up email. Please write your email in a professional manner with a greeting, body, and closing statement. When addressing me, ``Alex" is fine. I am not a professor (only a graduate student), and I am not yet a doctor. 
+
+Please make sure to notice the inference from the communication policy time frame. \textit{\textbf{I am not obligated to respond to emails regarding assignments that are sent within twenty-four hours of the deadline.}} There are multiple reasons behind this policy. The first is for your benefit as a student. Coding can take much longer than you initially thought and you must plan your time accordingly. Unless you are already a very proficient programmer, you are unlikely to be successful if you start working on an assignment the night before it is due. The second reason behind the policy is that I am also busy and a student. I try to have a life outside of my work as much as possible. It is unlikely that I will be checking my email if I am out with friends the night before one of your assignments is due. 
+
+\subsection*{Assignment Submission Policy}
+
+As mentioned above, I will not accept any submission of an assignment accept on Canvas. I understand that this may seem strict, but the reason for this is that if I have to keep track of assignment submissions on Canvas and in my email, it is much more likely that something will slip through the cracks. Also, we are using Canvas as it has many features that are useful for me and the grader when grading assignments. 
+
+% During Class Expectations
+\subsection*{During Class}
+It is strongly encouraged that you bring a computer to every lecture and be programming along with me and the slides. The only way you learn programming is by doing. I cannot stress this enough. I've heard some mathematicians say that math is not a spectator sport. While that is definitely true for math, it is even more true for programming. In order to learning how to program, you have to program! So please, follow along with me during lecture. 
+
+% Group Assignment Submission
+\subsection*{Submitting Assignments as a Group}
+You are allowed to work in groups of \textit{\textbf{three}} for the homework assignments. If you do, \textit{\textbf{please only submit one copy of the assignment and clearly state who was in your group.}} This 1) makes grading easier on our side, 2) guarantees consistency in grading across groups members, and 3) makes clear who worked with whom.
+
+% Names on Assignments Policy
+\begin{ToggleSect}{SubmissionIDs}
+\subsection*{Names on Assignments}
+I will be giving you a unique identifier to put on your assignments. \textit{Please do not put your real name anywhere in the file or in the file name.} This is to remove any implicit bias from names in the grading process. This is to be fair to you and also to protect my grader.
+\end{ToggleSect}
+
+\begin{ToggleSect}{PSgrading}
+\subsection*{Problem Set Grading System}\label{subsec:PSgrading}
+
+\end{ToggleSect}
+
+% Regrade Policy
+\subsection*{Regrade Policy} Regrading request must be sent via email within \textbf{one week} of the assignment being returned.
+
+% Attendance Policy
+\subsection*{Attendance Policy}
+As participation is a part of your grade, attendance is \textit{required}. Not attending lecture will hurt both your grade and your understanding of the course. If you have a University Approved Absence, please let me know so that we can make plans accordingly.
+
+% Mask Use: I hope I can cut this in the fall :( 
+\begin{ToggleSect}{MaskPolicy}
+\subsection*{Mask Use}
+This semester, while we are in the midst of a global pandemic, all enrolled students are required to wear a mask covering your mouth and nose at all times in our classroom. This requirement is to protect our educational community, your classmates and me, as we all learn together. If you choose not to wear a mask, or wear it improperly, I will ask you to leave immediately, and I will submit a report to the \href{https://cm.maxient.com/reportingform.php?UNCChapelHill&layout_id=23}{Office of Student Conduct.}  At that point you will be disenrolled from this course for the protection of our educational community. Students who have an authorized accommodation from Accessibility Resources and Service have an exception.  For additional information, see \href{https://carolinatogether.unc.edu/}{Carolina Together.}
+\end{ToggleSect}
+
+% Honor Code
+\subsection*{Academic Integrity and Honesty}
+You are required to follow the UNC Honor Code as stated. If you are unfamiliar with the honor code, please see me or visit: \href{https://catalog.unc.edu/policies-procedures/honor-code/}{\tt\bf https://catalog.unc.edu/policies-procedures/honor-code/}. Any violations of the honor code will be reported accordingly.
+
+% Accommodations
+\subsection*{Accommodations for Disabilities}
+UNC accommodates reasonable requests for students with learning disabilities, physical disabilities, mental health struggles, chronic medical conditions, temporary disability, or pregnancy complications, all of which can impair student success. See the ARS website for contact and registration information: \href{https://ars.unc.edu/about-ars/contact-us}{\tt\bf https://ars.unc.edu/about-ars/contact-us}. 
+
+% CAPS
+\subsection*{Counseling and Psychological Services}
+CAPS is committed to addressing the mental health needs of the UNC community. Please do not hesitate to reach out: \href{https://caps.unc.edu}{\tt\bf https://caps.unc.edu}
+
+% Title IX
+\subsection*{Discrimination and Title IX}
+I value the perspectives of individuals from all backgrounds reflecting the diversity of our students. I broadly define diversity to include race, gender identity, national origin, ethnicity, religion, social class, age, sexual orientation, political background, and physical and learning ability. I strive to make this classroom an inclusive space for all students. Please let me know if there is anything I can do to improve, I appreciate suggestions.
+
+Any student who is impacted by discrimination, harassment, interpersonal (relationship) violence, sexual violence, sexual exploitation, or stalking is encouraged to seek resources on campus or in the community. Please contact the Director of Title IX Compliance (Adrienne Allison - \href{Adrienne.allison@unc.edu}{\tt\bf Adrienne.allison@unc.edu}), Report and Response Coordinators in the Equal Opportunity and Compliance Office (\href{reportandresponse@unc.edu}{\tt\bf reportandresponse@unc.edu}), Counseling and Psychological Services (confidential), or the Gender Violence Services Coordinators (\href{gvsc@unc.edu}{\tt\bf gvsc@unc.edu}; confidential) to discuss your specific needs. Additional resources are available at safe.unc.edu.
+
+% Preferred Name Policy
+\subsection*{Preferred Name \& Preferred Gender Pronouns}
+Professional courtesy and sensitivity are especially important with respect to individuals and topics dealing with differences of race, culture, religion, politics, sexual orientation, gender, gender variance, and nationalities. Class rosters are provided to the instructor with the student's legal name. I will gladly honor your request to address you by an alternate name or gender pronoun. Please advise me of this preference early in the semester so that I may make appropriate changes to my records.
+
+
+%------------------------------------------------------------------------------%
+%                            Additional Resources                              %
+%------------------------------------------------------------------------------%
+\subsection*{Additional Resources}
+\begin{itemize}
+
+    %Learning Center
+	\item \textbf{The Learning Center:} The UNC Learning Center is a great resource both for students who are struggling in their courses and for those who want to be proactive and develop sound study practices to prevent falling behind. They offer individual consultations, peer tutoring, academic coaching, test prep programming, study skills workshops, and peer study groups. If you think you might benefit from their services, please visit them in SASB North or visit their website to set up an appointment: \href{http://learningcenter.unc.edu}{\tt\bf http://learningcenter.unc.edu}. 
+	
+	%EconAid Center
+	\item \textbf{EconAid Center:} Additional help can be obtained through the EconAid Center. More information can be found at \href{https://econ.unc.edu/undergraduate/econaid/}{\tt\bf https://econ.unc.edu/undergraduate/econaid/}.
+\end{itemize}
+
+
+%------------------------------------------------------------------------------%
+%                          Syllabus Change Statement                           %
+%------------------------------------------------------------------------------%
+\subsection*{Syllabus Changes}
+The professor reserves the right to make changes to the syllabus, including project due dates and test dates. These changes will be announced as early as possible.
+
+
+%------------------------------------------------------------------------------%
+%                              Important Dates                                 %
+%------------------------------------------------------------------------------%
+\subsection*{Important Dates}   
+Please check the registrar's page for important dates: add/drop, breaks, course final, etc.
+
+\begin{itemize}
+    \item Monday, August 19, 2024: First Day of Class
+    \item Friday, August 23, 2024: Last Day for Late Registration
+    \item Friday, August 30, 2024: Last Day to Drop Class (No Record)
+    \item Monday, September 2, 2024: Labor Day - No Class
+    \item Tuesday, September 3, 2024: Well-Being Day - No Class
+    \item Monday, September 23, 2024: Well-Being Day - No Class
+    \item Friday, October 11, 2024: Last Day to Drop Class (On Record)
+    \item Friday, October 11, 2024: Last Day to Declare P/F
+    \item Thursday, October 17, 2024 - Friday, October 18, 2024: Fall Break
+    \item Wednesday, November 27, 2024 - Friday, November 29, 2024: Thanksgiving Break - No Class
+    \item Wednesday, December 4, 2024: Last Day of Class
+    \item 4PM, Tuesday, December 10, 2024: Final Exam Time
+\end{itemize}
+
+%==============================================================================%
+%                                DOCUMENT END                                  %
+%==============================================================================%
+\end{document}
+
+
