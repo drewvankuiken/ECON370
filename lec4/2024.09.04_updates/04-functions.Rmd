@@ -1,0 +1,651 @@
+---
+title: "Data Science for Economists"
+# subtitle: "<html><div style='float:left'></div><hr color='#EB811B' size=1px width=796px></html>"
+subtitle: "Lecture 4: Functions"
+author: "Drew Van Kuiken"
+date: "University of North Carolina | [ECON 370](https://github.com/drewvankuiken/ECON370)" #"`r format(Sys.time(), '%d %B %Y')`"
+output:
+  xaringan::moon_reader:
+    css: [default, metropolis, metropolis-fonts] 
+    lib_dir: libs
+    nature:
+      highlightStyle: github
+      highlightLines: true
+      countIncrementalSlides: false
+    pdf_document: default
+---
+name: toc
+
+```{r setup, include=FALSE}
+options(htmltools.dir.version = FALSE)
+library(knitr)
+opts_chunk$set(
+  fig.align="center", 
+  fig.height=4, #fig.width=6, 
+  # out.width="748px", #out.length="520.75px",
+  dpi=300, #fig.path='Figs/',
+  cache=F#, echo=F, warning=F, message=F
+  )
+#library(fontawesome)
+library(microbenchmark)
+library(data.table)
+library(ggplot2)
+set.seed(123)
+
+```
+
+# Table of contents
+
+1. [Introduction](#intro)
+
+2. [Functions](#functions)
+
+---
+class: inverse, center, middle
+name: intro
+
+# Introduction
+
+<html><div style='float:left'></div><hr color='#EB811B' size=1px width=796px></html>
+
+---
+# Agenda
+
+Today we will finally officially cover functions.
+
+While we have already used and talked about them quite a lot, there are a few quirks that we should go over along with learning how to write our own. 
+
+---
+class: inverse, center, middle
+name: functions
+
+# Functions
+
+<html><div style='float:left'></div><hr color='#EB811B' size=1px width=796px></html>
+
+---
+# What is a function? Just like in math!
+
+![Function Example](pics/functionExample.png)
+
+
+Terminology
+- Function: $f$
+- Function input/arguments: $x$
+- Function output: $f(x)$
+
+---
+# Motivation
+
+Let's generate a simple data.frame: 
+
+```{r}
+d = data.frame(x=runif(6),y=rnorm(6),z=rchisq(6,1))
+```
+
+Imagine we want to rescale each of these vectors so the minimum value in the column is 0 and the maximum in the column is 1. Here is one way we could do this: 
+
+```{r}
+d$x = (d$x - min(d$x,na.rm=TRUE))/(max(d$x, na.rm=TRUE) - min(d$x, na.rm=TRUE))
+d$y = (d$y - min(d$x,na.rm=TRUE))/(max(d$y, na.rm=TRUE) - min(d$y, na.rm=TRUE))
+d$z = (d$z - min(d$z,na.rm=TRUE))/(max(d$z, na.rm=TRUE) - min(d$z, na.rm=TRUE))
+
+head(d)
+```
+
+--
+
+Something's wrong here. 
+
+---
+# Motivation 
+
+Look more closely: 
+```{r}
+d$y = (d$y - min(d$x,na.rm=TRUE))/(max(d$y, na.rm=TRUE) - min(d$y, na.rm=TRUE))
+```
+
+I accidentally included the minimum from column x as opposed to column y. In essence, what we want is this: 
+
+```{r eval=FALSE, echo=TRUE}
+
+d$Var = (d$Var - min(d$Var,na.rm=TRUE))/(max(d$Var, na.rm=TRUE) - min(d$Var, na.rm=TRUE))
+```
+
+where we can give R a list of columns and it performs the same process on each of them. This is what a function does. Our initial ones will be a little bit simpler though.
+
+---
+# What is a function
+
+Functions in programming are just like functions in math: they take in inputs and return a unique output.
+
+Functions allow you to put code that you use frequently into a single line.
+
+> You should consider writing a function whenever you’ve copied and pasted a block of code more than twice (i.e. you now have three copies of the same code).
+
+*R for Data Science*
+
+Using functions appropriately makes for much cleaner code and code with fewer errors. 
+
+Functions are verbs; arguments are nouns.
+
+---
+# A Trivial Function
+
+```{r}
+return_input = function(x){
+  x #return the input as output
+}
+
+return_input(1)
+return_input(letters)
+
+return_input = function(x){
+  return(x) #this is equivalent, I prefer this
+}
+
+return_input(1)
+```
+
+---
+# Pythagorean Theorem
+
+```{r}
+hypotenuse = function(a,b){
+  sqrt(a^2+b^2)
+}
+hypotenuse(3,4)
+hypotenuse(1:5,2:6)
+hypotenuse(3,1:5)
+hypotenuse(3:5,1:5) #don't do this
+```
+
+---
+# A Weighted Mean
+
+```{r,error=TRUE}
+wt_mean = function(x,w){
+  sum(x*w)/sum(w)
+}
+wts = runif(20)
+wt_mean(1:20,wts)
+
+wt_mean = function(x,w){
+  if(length(x)!=length(w)){
+    stop("x and w must be the same length")
+  }
+  sum(x*w)/sum(w)
+}
+
+wt_mean(1:20,wts[-1])
+wt_mean(w = wts, x=1:20)
+
+```
+---
+# Default Arguments 
+
+In `R` you can define default arguments for functions. Typically you do this if there's a value that is used often and you don't want to always pass it to the function.
+
+We've already seen one example of default arguments:
+
+```{r}
+rnorm(1)
+rnorm(1,mean=0,sd=1)
+```
+
+To define a default argument, simply add it to the list of arguments with an equal sign and the default value.
+
+```{r}
+test_fun = function(x, y=2){
+  x+y
+}
+test_fun(3)
+```
+
+---
+# Default Arguments: Weighted Mean
+
+```{r,error=TRUE}
+wt_mean = function(x,w=rep(1,length(x))){
+  
+  # Description: Takes the weighted average of x using weights w
+  # Default w is a vector of 1s the same length as x.
+  
+  if(length(x)!=length(w)){
+    stop("x and w must be the same length")
+  }
+  
+  sum(x*w)/sum(w)
+}
+
+wt_mean(1:20)     # my weighted mean fun with equal weights
+mean(1:20)        # same as my function
+wt_mean(1:20,wts) # with the random weights
+```
+
+---
+# Intro to Control Flow
+
+Control flow refers to ways in which we control the order in which code is executed.
+
+The reason we learned the logic above is because we can use logical gates to control the path our code takes.
+
+Note: for simplicity, taking if statements outside of function definitions over the next couple slides.
+
+```{r, echo=FALSE, out.width="50%", fig.cap="A nice image."}
+knitr::include_graphics("pics/control_flow.png")
+```
+
+---
+# if Statements
+
+If statements are the most fundamental aspect of control flow.
+
+If something is true, then the code is executed. Otherwise, the code moves on.
+
+If statements must take a logical as an input: either `TRUE` or `FALSE`.
+
+```{r}
+x = 2
+if(x < 0){
+  print("x is less than 0")
+}
+```
+
+Notice nothing printed!
+
+```{r}
+x = -1
+if(x < 0){
+  print("x is less than 0")
+}
+```
+
+---
+# if, else if, and else
+
+However, sometimes we want to check multiple conditions. We can use else if and else statements.
+
+```{r}
+x = runif(1,-1,1)
+if(x > 0){
+  print("x is positive!")
+} else if(x < 0){
+  print("x is negative!")
+} else{
+  print("x is 0!")
+}
+x
+```
+---
+# More on if Statments
+
+Let me show you an example of bad code
+```{r}
+grade = 85 + rnorm(1,sd=5)
+if (grade >= 90) {
+  print(paste0("A ",round(grade)," is an A"))
+} 
+if (grade >= 80 & grade < 90) {
+  print(paste0("An ",round(grade)," is a B"))
+} 
+if (grade >= 70 & grade < 80) {
+  print(paste0("A ",round(grade)," is a C"))
+} 
+if (grade >= 60 & grade < 70) {
+  print(paste0("A ",round(grade)," is a D"))
+} 
+if(grade < 50){
+  print(paste0("A ",round(grade)," is an F"))
+}
+```
+
+---
+# More on if Statments
+
+To write clean code, think smart:
+```{r}
+if (grade >= 90) {
+  print(paste0("A ",round(grade)," is an A"))
+} else if (grade >= 80) {
+  print(paste0("A ",round(grade)," is a B"))
+} else if (grade >= 70) {
+  print(paste0("A ",round(grade)," is a C"))
+} else if (grade >= 60) {
+  print(paste0("A ",round(grade)," is a D"))
+} else{
+  print(paste0("A ",round(grade)," is an F"))
+}
+```
+---
+# More on if Statments
+
+The "else if" and "else" statements must be on the same line as the curly bracket:
+
+```{r, error = T}
+statement = F
+if(statement)
+{print("It's True!")
+}
+else
+{print("It's False!")
+}
+```
+
+```{r, error = T}
+statement = F
+if(statement)
+{print("It's True!")
+}else
+{print("It's False!")
+}
+```
+---
+# More on if Statments
+
+If everything fits on one line, that then don't need curly brackets
+```{r}
+x1 = if(TRUE) 2 else 3
+x2 = if(FALSE) 2 else 3
+c(x1,x2)
+```
+
+---
+# Vectorized if Statments
+
+With the standard if statement, R only allows a single logical value to be supplied. 
+ - If a vector is supplied, it only takes the first element.
+```{r,error=T}
+vals = c(T,F)
+if(vals){
+  print("TRUE!")
+}
+```
+
+--
+
+To do if else operations with a vector of logicals, use `ifelse()`
+
+```{r}
+x = 1:10
+ifelse(x %% 2 == 0, "Even","Odd")
+```
+---
+# Test Your Understanding
+
+Take 30 seconds to think about the following, then group up with the person next to you and discuss: 
+
+Using `ifelse()` commands, write a block of code that prints out "the remainder is r" for the integers 1 to 10 where r is the remainder when dividing by 3
+
+---
+# Conditions
+
+Sometimes we would like to throw an error, warning, or message while controlling the flow of the code.
+
+This can be done with the following respective functions: `stop()`, `warning()`, `message()`.
+
+```{r,error=T}
+x = 0
+if(x>0){
+  print(1/x)
+}else if(x<0){
+  print(-1/x)
+}else{stop("You cannot divide by 0!")}
+
+warning("This is a warning!")
+message("This is a message!")
+```
+---
+# Conditions
+
+- Errors stop code from running. These should be used to prevent something very bad from running.
+- Warnings will still allow for code to run, but in most cases, caution should be taken when the warning is triggered.
+- Messages can be useful when writing functions to see what is happening inside of it.
+ - More to come later.
+
+---
+class: inverse, center, middle
+name: functions
+
+# Back to Functions
+
+<html><div style='float:left'></div><hr color='#EB811B' size=1px width=796px></html>
+
+---
+# Default Arguments
+
+```{r}
+normalize = function(x, m = mean(x,na.rm=na.rm),s = sd(x,na.rm=na.rm),na.rm=FALSE){
+  return((x - m)/s)
+}
+normalize(1:10)
+normalize(c(1:10,NA))
+normalize(c(1:10,NA),na.rm=TRUE)
+```
+
+---
+# Writing Functions: Good Style
+
+The following are some recommendations for good programming style with functions:
+
+1. Name your functions something descriptive.
+ - Remember, they are verbs!
+2. Try to foresee errors and incorrect inputs to your functions and program in errors and warnings.
+ - This is less important if your functions are only for you. 
+3. Comment, comment comment!
+4. If you write a "family" of functions, try to use similar naming schemes.
+5. Scope....
+---
+# Scope
+
+I've referred to the global environment a lot throughout lectures. In terms of scope, it is the most general. 
+
+--
+
+However, the environment within a function is a separate, more specific environment. Understanding this difference is important.
+
+--
+
+Variables in the global environment can be referred to in `R` but variables in a function environment that are not returned *will not* be saved in the global environment. 
+
+--
+
+It is generally frowned upon to refer to too many global variables within functions
+ - It also depends on how lazy you're being
+ 
+--
+ 
+Let's see some examples.
+
+---
+# Scope Examples
+
+```{r,error=T}
+y = 2
+add_xy = function(x){
+  return(x + y)
+}
+add_xy(3)
+
+my_mean = function(x){
+  x_sum = sum(x)
+  x_sum/length(x)
+}
+my_mean(1:10)
+x_sum
+```
+
+-- 
+`return()` makes this clearer:
+
+```{r, error = T}
+my_mean = function(x){
+  x_sum = sum(x)
+  return(x_sum/length(x))
+}
+my_mean(1:10)
+x_sum
+```
+
+---
+# Advice Regarding Scope
+
+- Variables that are unlikely to change throughout a script are safe to be created and referred to as "global variables."
+ - e.g. $N\_sim$ in a simulation exercise.
+- When writing functions, only refer to variables in the global environment that meet the requirements described above. Relying on globals too much is sloppy programming.
+- However, writing functions with too many arguments is also bad programming. You have to find a balance.
+- There are ways to save variables created in a function to the global environment (look up <<-). I would generally avoid these. They can get you into trouble.
+ - If you want to return multiple objects, make a list!!
+
+---
+# Returning vs Printing
+
+I have hinted at the difference between returning an object and printing an object before. 
+
+This distinction matters the most for functions.
+
+When you return an object from a function, that is the only thing that can be returned.
+
+When you print an object, it shows output but does not return the object from the function unless you also specify it to print.
+
+The best thing I can say to understand the difference is that printing is for you and returning is for the computer!
+
+Let's look at some examples.
+
+---
+# Returning vs Printing
+
+```{r}
+plus_delta = function(x,delta=1){
+  print(paste0("We are adding ", delta, " to ", x, "!"))
+  x + delta
+}
+
+plus_delta(5)
+plus_delta(4.5,0.75)
+```
+---
+# Returning vs Printing
+```{r,error=T}
+mult_plus1 = function(x,y){
+  xy = x*y
+  print(xy)
+  xy+1
+}
+
+mult_plus1(2,3)
+xy
+
+out1 = mult_plus1(2,3)
+out1
+```
+
+---
+# Returning vs Printing
+
+If the last line of a function is a print statement, will also return the printed *object* (not the printed characters)
+
+```{r}
+mult_plus1 = function(x,y){
+  xy = x*y
+  print(xy+1)
+}
+
+out2 = mult_plus1(2,3)
+out2
+class(out2)
+```
+
+---
+# Misc Aspects of Functions
+
+Functions don't have to have arguments.
+
+Functions don't have to return an object.
+
+Functions can only return one object; however, if you're using if statements, there might be multiple returns specified. It's just ultimately only one will be used.
+
+You can write functions to take an arbitrary number of inputs using `...` notation.
+
+---
+# No arguments or Returns
+
+```{r}
+say_hello = function(){
+  print("Hello! :)")
+} #notice, nothing is being returned either!!
+
+say_hello()
+
+say_my_name = function(name){
+  print(name)
+}
+
+say_my_name("Drew")
+
+```
+
+---
+# Conditional Returns
+
+```{r}
+is_prime = function(x){
+  if ( x %% 1 != 0 ) stop("x must be an integer!")
+  if ( length(x)!=1 ) stop("x can only be length 1!")
+  if ( x %in% 1:2 ){ # if x is 1 or 2, return FALSE or TRUE
+    return(x == 2)
+  } else { # otherwise, loop through numbers 3 to x
+    num_vec    = 3:x
+    prime_list = 2
+    i          = 1
+    for(n in num_vec){
+      if(sum((n %% prime_list) == 0) == 0){
+        i             = i + 1
+        prime_list[i] = n
+      }
+    }
+    if(x %in% prime_list){ # if x is in list of primes, return TRUE
+      return(TRUE)
+    }else{ # otherwise, return FALSE
+      return(FALSE)
+    }
+  }
+}
+```
+---
+# Conditional Returns
+
+```{r}
+primes1to100 = sapply(1:100,is_prime)
+names(primes1to100) = 1:100
+primes1to100
+```
+
+---
+# Arbitrary Inputs
+
+```{r}
+commas = function(...){
+  out = paste(...,sep = ", ")
+  out
+}
+
+commas("red","blue", "yellow","green")
+
+```
+
+Any arguments that come after `...` *must have default arguments!*
+
+---
+class: inverse, center, middle
+
+# Next lecture(s): Misc.
+
+<html><div style='float:left'></div><hr color='#EB811B' size=1px width=796px></html>
+
+
+
+```{r gen_pdf, include = FALSE, cache = FALSE, eval = TRUE}
+infile = list.files(pattern = '.html')
+#xaringan::decktape(infile, "04-functions.pdf")
+```

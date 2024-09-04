@@ -1,0 +1,64 @@
+---
+title: "Data Science for Economists"
+# subtitle: "<html><div style='float:left'></div><hr color='#EB811B' size=1px width=796px></html>"
+subtitle: "Brief Update on Schedule"
+author: "Drew Van Kuiken"
+date: "University of North Carolina | [ECON 370](https://github.com/drewvankuiken/ECON370)" #"`r format(Sys.time(), '%d %B %Y')`"
+output:
+  xaringan::moon_reader:
+    css: [default, metropolis, metropolis-fonts] 
+    lib_dir: libs
+    nature:
+      highlightStyle: github
+      highlightLines: true
+      countIncrementalSlides: false
+    pdf_document: default
+    
+---
+# Schedule Notes
+
+1. No class: 
+  - Friday, September 27
+  - Friday, October 4
+2. Content Tweaks
+  - **Previously:** Last lecture in Section 2 was "programming applications (optimization, simulation, numerical methods)"
+  - **Now:** Last lecture in Section 2 is "programming applications (regression, simulation)"
+  - **Now:** we'll cover web scraping in Section 3 - Data Acumen
+  - **Now:** We'll cover optimization and numerical methods in Section 4 - Data Science and Visualization 
+
+--
+
+
+Why the content tweaks? Because I want you to start thinking about your final project
+
+---
+# Final Project (Brief Overview)
+
+Your final project is to put together a *basic* research project. This consists of: 
+- A research question
+- Data collection
+- Data cleaning
+- Analysis 
+- Visualization
+- 2 Presentations 
+  - One that describes your project in detail (~15 slides)
+  - One that you present in class (~3 slides)
+
+Grading will be weighted towards on the `R` components of the project: data cleaning, analysis, visualization
+
+But *all* of this is what data scientists do. (And what they ask about in interviews!)
+
+---
+# Some Initial Thoughts
+
+For now, just start thinking really broadly. What kind of topics are you interested in, where could you find relevant data, what are some questions you can ask? 
+
+HW3 (due mid-October) will ask you to come up with a research question, find data, do some preliminary cleaning of that data
+- Note this isn't binding - you can complete HW3 and make your final project about something different 
+
+I'll circulate some common places to find data and an example research question or two during our lecture on regression (mid- to late-September)
+
+```{r gen_pdf, include = FALSE, cache = FALSE, eval = TRUE}
+infile = list.files(pattern = '.html')
+#xaringan::decktape(infile, "04-functions.pdf")
+```
