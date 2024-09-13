@@ -624,9 +624,9 @@ say_my_name("Alex")
 is_prime = function(x){
   if ( x %% 1 != 0 ) stop("x must be an integer!")
   if ( length(x)!=1 ) stop("x can only be length 1!")
-  if ( x %in% 1:2 ){ # if x is 1 or 2, return FALSE or TRUE
+  if ( x %in% 1:2 ){ 
     return(x == 2)
-  } else { # otherwise, loop through numbers 3 to x
+  } else { 
     num_vec    = 3:x
     prime_list = 2
     i          = 1
@@ -636,9 +636,9 @@ is_prime = function(x){
         prime_list[i] = n
       }
     }
-    if(x %in% prime_list){ # if x is in list of primes, return TRUE
+    if(x %in% prime_list){ 
       return(TRUE)
-    }else{ # otherwise, return FALSE
+    }else{ 
       return(FALSE)
     }
   }

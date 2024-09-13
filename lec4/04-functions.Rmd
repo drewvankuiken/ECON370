@@ -392,9 +392,9 @@ say_my_name("Alex")
 is_prime = function(x){
   if ( x %% 1 != 0 ) stop("x must be an integer!")
   if ( length(x)!=1 ) stop("x can only be length 1!")
-  if ( x %in% 1:2 ){ # if x is 1 or 2, return FALSE or TRUE
+  if ( x %in% 1:2 ){ 
     return(x == 2)
-  } else { # otherwise, loop through numbers 3 to x
+  } else { 
     num_vec    = 3:x
     prime_list = 2
     i          = 1
@@ -404,9 +404,9 @@ is_prime = function(x){
         prime_list[i] = n
       }
     }
-    if(x %in% prime_list){ # if x is in list of primes, return TRUE
+    if(x %in% prime_list){ 
       return(TRUE)
-    }else{ # otherwise, return FALSE
+    }else{ 
       return(FALSE)
     }
   }
@@ -446,6 +446,9 @@ class: inverse, center, middle
 
 
 ```{r gen_pdf, include = FALSE, cache = FALSE, eval = TRUE}
+options(pagedown.remote.maxattempts=40) # number of attempt in total
+options(pagedown.remote.sleeptime=2) # time in second between attempt
 infile = list.files(pattern = '.html')
+pagedown::chrome_print(input = infile, timeout = 10000)
 #xaringan::decktape(infile, "04-functions.pdf")
 ```
