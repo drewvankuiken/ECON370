@@ -1,0 +1,409 @@
+---
+title: "Data Science for Economists"
+# subtitle: "<html><div style='float:left'></div><hr color='#EB811B' size=1px width=796px></html>"
+subtitle: "Lecture 6: Misc Base R"
+author: "Drew Van Kuiken"
+date: "University of North Carolina | [ECON 370](https://github.com/drewvankuiken/ECON370)" #"`r format(Sys.time(), '%d %B %Y')`"
+output:
+  xaringan::moon_reader:
+    css: [default, metropolis, metropolis-fonts] 
+    lib_dir: libs
+    nature:
+      highlightStyle: github
+      highlightLines: true
+      countIncrementalSlides: false
+---
+name: toc
+
+
+```{r setup, include=FALSE}
+options(htmltools.dir.version = FALSE)
+library(knitr)
+opts_chunk$set(
+  fig.align="center", 
+  fig.height=4, #fig.width=6, 
+  # out.width="748px", #out.length="520.75px",
+  dpi=300, #fig.path='Figs/',
+  cache=F#, echo=F, warning=F, message=F
+  )
+library(fontawesome)
+library(microbenchmark)
+library(data.table)
+library(ggplot2)
+set.seed(123)
+```
+
+# Table of contents
+
+1. [Introduction](#intro)
+
+2. [Dates and Times](#dates)
+
+3. [Reading in Files](#read)
+
+4. [Regular Expressions](#regular)
+
+5. [Functions I use a lot](#funs)
+
+---
+class: inverse, center, middle
+name: intro
+
+# Introduction
+
+<html><div style='float:left'></div><hr color='#EB811B' size=1px width=796px></html>
+
+---
+# Agenda
+
+Today we will cover a bunch of miscellaneous topics that don't quite fit anywhere else. 
+
+I will also mention some functions and tips and tricks that I find useful.
+
+---
+class: inverse, center, middle
+name: dates
+
+# Dates and Times
+
+<html><div style='float:left'></div><hr color='#EB811B' size=1px width=796px></html>
+
+---
+# Dates and Time
+
+In order to work with dates and times correctly, they need to be specified as a date or time.
+
+You will likely work with dates more often than times, so that is where more attention will be placed.
+
+Understanding exactly how dates work requires understanding a bit more about the advanced aspects of R; however, to get the basics does not require this.
+
+--
+
+The default format for dates in R is `YYYY-MM-DD.`
+```{r}
+as.Date("2021-09-14")
+```
+
+--
+
+If you have a date not in the format listed above, you have to give the `as.Date()` function the "format" argument. [See this link for different formats.](https://www.stat.berkeley.edu/~s133/dates.html)
+
+```{r}
+as.Date("09/14/2021",format="%m/%d/%Y")
+```
+
+---
+# Lubridate
+
+While we have been working in base `R` almost exclusively so far, I would highly recommend using the `lubridate` package. 
+
+Working with dates and times is much easier than in base `R`.
+
+```{r,message=F}
+library(lubridate)
+```
+
+```{r}
+ymd("2021-09-14")
+mdy("09/14/2021")
+today()
+```
+
+---
+# Lubridate (Cont.)
+
+```{r}
+year(today())
+month(today())
+week(today())
+ymd_hms("2017-01-31 20:11:59")
+mdy_hm("01/31/2017 08:01")
+```
+
+---
+# More About Dates and Times
+
+There are a lot of little quirks when it comes to dates and times that usually you will not have to know. God bless you if you're ever working with time zones, spring forward, etc. 
+
+This is where the skill of Googling really comes in handy. 
+
+I would recommend also reading [Chapter 16](https://r4ds.had.co.nz/dates-and-times.html) in *R for Data Science* that is listed on the syllabus. 
+
+---
+
+class: inverse, center, middle
+name: reading
+
+# Reading in Files
+
+<html><div style='float:left'></div><hr color='#EB811B' size=1px width=796px></html>
+
+---
+# Reading in Files
+
+Because we've been working with simulated data or preloaded data, we have yet to have to read in data. 
+
+The most common function you will use is `read.csv()`.
+ - While you might want to read in Excel spreadsheets, I would highly recommend minimizing how much you use Excel.
+ 
+To read in a file, you need to know where the file is located. You will need to set your "working directory."
+
+```{r}
+getwd()
+setwd("~/Dropbox/Econ370/local/lec6/")
+getwd()
+```
+
+---
+# See Files in Directory
+
+To see the names of the files in your current working directory, use the `list.files()` functions.
+
+```{r}
+list.files()
+```
+---
+# Read in CSV
+
+To read in the CSV listed above (about market share data and prices), use the function `read.csv()`:
+
+```{r}
+list.files()
+OTC_data = read.csv("blp_data.csv")
+head(OTC_data)
+```
+
+---
+# A Few Things on Reading in Data
+
+CSV stands for "comma-separated values" i.e. the data values are separated by commas.
+
+If you notice in the help documentation for read.csv, it assumes `sep=","`.
+
+If this is not true, you might have to change the sep argument.
+ - e.g. Tab separated values are also common.
+ 
+However, don't worry too much about this. While you need to understand it a little, we will be using `read_csv()` from the `tidyverse` and/or `fread()` from the `data.table` package, which are superior to read.csv.
+
+---
+
+class: inverse, center, middle
+name: regular
+
+# Regular Expressions
+
+<html><div style='float:left'></div><hr color='#EB811B' size=1px width=796px></html>
+
+---
+# Parsing Text
+
+Parsing text to find patterns or extract data is hard. 
+
+There are a group of functions that can be used for this: the `grep()` functions.
+
+`grep()` takes a pattern and character vector and returns a vector of indexes for which elements contained the pattern.
+
+`grepl()` takes a pattern and character vector and returns a logical vector for if each element contains the pattern.
+
+`sub()` takes a pattern, a replacement, and a character vector and returns the character vector with the first occurrence of the pattern replaced with the replacement.
+
+`gsub()` is exactly like `sub()` except that it replaces all occurrences. 
+
+---
+# Parsing Text: Examples
+
+```{r}
+statecountry_names = c('Florida','Germany','Georgia','Geniva',
+                'Istanbul','NewZealand','Australia')
+grep("G",statecountry_names)
+grepl("G",statecountry_names)
+grepl("A",statecountry_names,ignore.case = F)
+grepl("A",statecountry_names,ignore.case = T)
+
+```
+
+---
+#Parsing Text: Examples
+
+```{r}
+sub("G","A",statecountry_names)
+sub("G","A",statecountry_names,ignore.case = T)
+gsub("G","A",statecountry_names,ignore.case = T)
+
+```
+
+---
+# Regular Expressions
+
+Sometimes there are patterns that you would like to detect in text that are more complicated than just a short character expression that you can program.
+
+Or you'd like to do all combinations of something.
+
+This is where regular expressions can be used.
+
+Truthfully, we could spend an entire class just learning regular expressions.
+
+As such, I am only going to briefly touch them and encourage you to look into them more on your own.
+
+The plus side is they are pretty universal across languages. That is, whether you're using `R` or `Python`, regular expressions still work the same way!
+
+---
+# Regular Expressions: Examples
+
+Let's say we want to flag character strings that start with "The". The regular expression would be `^The`
+
+```{r}
+test_char = c("The beginning.","The end.","The middle.","Other.")
+grepl("^The",test_char)
+
+```
+
+Now, let's say we want to flag character strings that end with "end." The regular expression would be `end$`
+
+```{r}
+grepl("end.$",test_char)
+```
+
+Find all vowels
+
+```{r}
+grepl("[aeiou]",letters)
+
+```
+
+---
+# Regular Expressions: More Examples
+
+Let's say we have a couple strings to match:
+
+```{r}
+test_char = c("The beginning.","The end.","The middle.","Other.")
+grepl("beginning|end",test_char)
+
+```
+
+We can also grab numbers from a string:
+
+```{r}
+grepl("[0-9]",c(1:5,"I had 2 coffees today","Hello World!"))
+```
+
+---
+# Regular Expressions: More
+
+Validating that a user supplied an email to a website form is famously a difficult problem. Here's one regex that a user on [StackOverflow](https://stackoverflow.com/questions/201323/how-can-i-validate-an-email-address-using-a-regular-expression) put forth:
+
+pattern <- (?:[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*|'(?:[\x01-\x08\x0b\x0c\x0e-\x1f\x21\x23-\x5b\x5d-\x7f]|\\[\x01-\x09\x0b\x0c\x0e-\x7f])*')@(?:(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?|\[(?:(?:(2(5[0-5]|[0-4][0-9])|1[0-9][0-9]|[1-9]?[0-9]))\.){3}(?:(2(5[0-5]|[0-4][0-9])|1[0-9][0-9]|[1-9]?[0-9])|[a-z0-9-]*[a-z0-9]:(?:[\x01-\x08\x0b\x0c\x0e-\x1f\x21-\x5a\x53-\x7f]|\\[\x01-\x09\x0b\x0c\x0e-\x7f])+)\])
+
+---
+# Regular Expressions: More
+
+Regular expressions are very powerful for processing text data. Processing text data is a skill set in-and-of itself. 
+
+At one point, I knew regular expressions (regex) decently well. Now, I have LLMs write my regexs if they're at all complicated. 
+
+Lots of learning when it comes to programming is simply being aware of something so that you can look into it more when you actually need to use it.
+
+If you want to learn more about regular expressions, [see the following cheat-sheet.](https://cheatography.com/davechild/cheat-sheets/regular-expressions/)
+
+
+---
+class: inverse, center, middle
+name: funs
+
+# Functions That I Use
+
+<html><div style='float:left'></div><hr color='#EB811B' size=1px width=796px></html>
+
+---
+# Misc Functions
+
+- `rep()`: repeats a vector $N$ times
+ - Used a lot for preallocating vectors
+- `unique()`: takes the unique values of a vector
+- `sort()`: sorts a vector
+- `order()`: like sort, but gives the IDs rather than a sorted vector
+- `sum()`: sums up vectors
+- `seq()`: creates sequences
+- `cbind()`: combine matrices or data.frames by columns
+- `rbind()`: combine matrices or data.frames by rows
+- `ncol()`: returns number of columns of data.frame or matrix
+- `nrow()`: returns number of rows of data.frame or matrix
+- `dim()`: returns dimensions of an array-like object
+- `substr()`: returns a string subsetted by the indexes supplied
+- `strsplit()`: splits a string by a pattern
+
+---
+# Examples
+
+```{r}
+rep(0,5)
+rep(1:10,2)
+rep(1:10,each=2)
+letter_samp = sample(letters,12,replace=T)
+letter_samp
+unique(letter_samp)
+```
+---
+# Examples (Cont.)
+
+```{r}
+norm_draws = rnorm(10)
+norm_draws
+sort(norm_draws)
+order(norm_draws)
+sum(norm_draws)
+seq(1,2.4,by=0.1)
+```
+
+---
+# Examples (Cont.)
+```{r}
+rand_mat1 = matrix(rnorm(2*3),nrow=3)
+rand_mat2 = matrix(rnorm(1*3),nrow=3)
+rand_mat1
+rand_mat2
+cbind(rand_mat1,rand_mat2)
+```
+---
+# Examples (Cont.)
+```{r}
+rand_mat1 = matrix(rand_mat1,nrow=2)
+rand_mat2 = matrix(rand_mat2,nrow=1)
+rand_mat1
+rand_mat2
+rbind(rand_mat1,rand_mat2)
+```
+
+---
+# Examples (Cont.)
+```{r}
+ncol(rand_mat2)
+nrow(rand_mat2)
+dim(rand_mat2)
+my_string = "Hello, This is Econ 370, and my name is Drew"
+substr(my_string,1,10)
+strsplit(my_string,",")
+```
+
+
+---
+# For Next Class
+
+Required reading: Ch. 2, Mastering Metrics (PDF is on Canvas)
+
+Optional Reading: Ch. 3, Introduction to Statistical Learning (course textbook)
+
+---
+
+class: inverse, center, middle
+
+# Next lecture: Introduction to Regression
+
+<html><div style='float:left'></div><hr color='#EB811B' size=1px width=796px></html>
+
+
+```{r gen_pdf, include = FALSE, cache = FALSE, eval = TRUE}
+infile = list.files(pattern = '.html')
+#pagedown::chrome_print(input = infile, timeout = 100)
+```
