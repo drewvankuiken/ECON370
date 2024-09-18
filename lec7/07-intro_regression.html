@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="" xml:lang="">
+  <head>
+    <title>Data Science for Economists</title>
+    <meta charset="utf-8" />
+    <meta name="author" content="Drew Van Kuiken" />
+    <script src="libs/header-attrs/header-attrs.js"></script>
+    <link href="libs/remark-css/default.css" rel="stylesheet" />
+    <link href="libs/remark-css/metropolis.css" rel="stylesheet" />
+    <link href="libs/remark-css/metropolis-fonts.css" rel="stylesheet" />
+  </head>
+  <body>
+    <textarea id="source">
+class: center, middle, inverse, title-slide
+
+.title[
+# Data Science for Economists
+]
+.subtitle[
+## Lecture 7: Introduction to Regression
+]
+.author[
+### Drew Van Kuiken
+]
+.date[
+### University of North Carolina | <a href="https://github.com/drewvankuiken/ECON370">ECON 370</a>
+]
+
+---
+
+name: toc
+
+
+# Table of contents
+
+1. [Introduction](#intro)
+
+2. [Regression: An Intuitive Approach](#intuit)
+
+3. [Regression: Some Math](#math) (In a separate deck)
+
+with thanks to blog posts from [Joshua Loftus](https://joshualoftus.com/posts/2020-11-23-least-squares-as-springs/least-squares-as-springs.html) today.
+
+---
+class: inverse
+# What Is Regression? 
+
+Some options:
+- A way of comparing &lt;span style="color: #f68f46;"&gt;**treatment**&lt;/span&gt; and &lt;span style="color: #f68f46;"&gt;**control**&lt;/span&gt; subjects who have the same observed characteristics
+- A way to assess the *relationship* between independent variables and a dependent variable
+- Group means (for Ordinary Least Squares, at least)
+
+--
+
+... helpful, but not very concrete
+
+---
+# We've seen an example already...
+
+Let's go back to our OG `gapminder` dataset. 
+
+
+``` r
+library(gapminder)
+gp_subset &lt;- gapminder[gapminder$continent=="Asia"&amp;gapminder$year==2007,]
+g &lt;- ggplot(gp_subset,aes(x=gdpPercap, y=lifeExp)) + 
+  geom_point()
+g
+```
+
+&lt;img src="07-intro_regression_files/figure-html/unnamed-chunk-1-1.svg" style="display: block; margin: auto;" /&gt;
+
+---
+# We've seen an example already...
+
+&lt;img src="07-intro_regression_files/figure-html/unnamed-chunk-2-1.svg" style="display: block; margin: auto;" /&gt;
+
+How can we assess the relationship between GDP per capita and life expectancy? If a country in Asia in 2007 had a GDP per capita of 15,000, what would we expect its life expectancy to be?
+
+---
+# We've seen an example already...
+In our first class, we added a line of best fit:
+
+
+``` r
+g + geom_smooth(method='lm',se=FALSE)
+```
+
+```
+## `geom_smooth()` using formula = 'y ~ x'
+```
+
+&lt;img src="07-intro_regression_files/figure-html/unnamed-chunk-3-1.svg" style="display: block; margin: auto;" /&gt;
+
+So: how would we characterize the relationship? If a country in Asia in 2007 had a GDP per capita of 15,000, what would we expect its life expectancy to be?
+
+---
+# We can try other lines
+
+&lt;img src="07-intro_regression_files/figure-html/unnamed-chunk-4-1.svg" style="display: block; margin: auto;" /&gt;
+
+---
+# We can try other lines
+
+&lt;img src="07-intro_regression_files/figure-html/unnamed-chunk-5-1.svg" style="display: block; margin: auto;" /&gt;
+
+---
+# OLS
+When we fit a line of best fit, we minimize the ***squared deviations*** between our predictions and our data
+
+
+``` r
+g + geom_smooth(method='lm',se=FALSE)
+```
+
+```
+## `geom_smooth()` using formula = 'y ~ x'
+```
+
+&lt;img src="07-intro_regression_files/figure-html/unnamed-chunk-6-1.svg" style="display: block; margin: auto;" /&gt;
+
+OLS = Ordinary Least *Squares*. We'll get into the math of this later. 
+
+---
+# Other Options Can Work!
+
+We could just as easily minimize the ***absolute deviations***.
+
+&lt;img src="07-intro_regression_files/figure-html/unnamed-chunk-7-1.svg" style="display: block; margin: auto;" /&gt;
+
+This line looks a lot better than our ad hoc lines! We could certainly use it to assess relationships or predict life expectancies. 
+
+--
+
+We typically don't though. OLS has some *very* nice properties, and so it's become the first thing in every data scientist's toolkit. 
+
+---
+# In Case You Were Curious:
+
+```
+## `geom_smooth()` using formula = 'y ~ x'
+```
+
+&lt;img src="07-intro_regression_files/figure-html/unnamed-chunk-8-1.svg" style="display: block; margin: auto;" /&gt;
+
+Here's the difference between minimizing &lt;span style="color: #f68f46;"&gt;***absolute***&lt;/span&gt; deviations and minimizing &lt;span style="color: blue;"&gt;***squared***&lt;/span&gt; deviations.
+
+---
+# Building Intuition: Mechanics
+
+Imagine each of our data points is a physical object. The large blue dot below is the average of our dataset: 
+
+&lt;img src="07-intro_regression_files/figure-html/unnamed-chunk-9-1.svg" style="display: block; margin: auto;" /&gt;
+
+Now, imagine we've attached springs between each point and a line running through our data. Each spring has equal strength. 
+
+---
+# What If Our Line Is Wrong?
+What happens if we use the line that was too high up?
+
+&lt;img src="07-intro_regression_files/figure-html/unnamed-chunk-10-1.svg" style="display: block; margin: auto;" /&gt;
+
+--
+
+All the springs pull downwards on the line, until it runs through the big blue dot
+
+---
+# What If Our Line Is Wrong? 
+
+The springs will exert pressure even if the line runs through the mean of the data: 
+
+&lt;img src="07-intro_regression_files/figure-html/unnamed-chunk-11-1.svg" style="display: block; margin: auto;" /&gt;
+
+--
+
+The springs will exert torque on our line until the torque balances out!
+
+---
+# What If Our Line Is Wrong? 
+
+
+```
+## `geom_smooth()` using formula = 'y ~ x'
+```
+
+&lt;img src="07-intro_regression_files/figure-html/unnamed-chunk-12-1.svg" style="display: block; margin: auto;" /&gt;
+
+--
+
+Now an equal amount of force is being exerted on the line such that it will not shift up or down or rotate further. 
+
+---
+# Outliers are important!
+
+Check out how much pressure the point in the bottom left corner is exerting on our line. 
+
+Ordinary Least Squares minimizes the squared deviation from our line of best fit, so outliers are going to weigh disproportionately on our results. Imagine we dropped that observation: 
+
+
+```
+## `geom_smooth()` using formula = 'y ~ x'
+## `geom_smooth()` using formula = 'y ~ x'
+```
+
+&lt;img src="07-intro_regression_files/figure-html/unnamed-chunk-13-1.svg" style="display: block; margin: auto;" /&gt;
+
+---
+# Looking Closer
+
+So we've run our first regression. We've teased out some details about our relationship and we're left with some questions. 
+
+Most importantly: what's going on with that outlier? We can do some investigation: 
+
+--
+
+
+``` r
+head(gp_subset[gp_subset$lifeExp&lt;=50,1:6])
+```
+
+```
+## # A tibble: 1 × 6
+##   country     continent  year lifeExp      pop gdpPercap
+##   &lt;fct&gt;       &lt;fct&gt;     &lt;int&gt;   &lt;dbl&gt;    &lt;int&gt;     &lt;dbl&gt;
+## 1 Afghanistan Asia       2007    43.8 31889923      975.
+```
+
+Why might our regression be misleading? 
+
+---
+class: inverse, center, middle
+
+# Regression: An Intuitive Approach
+
+&lt;html&gt;&lt;div style='float:left'&gt;&lt;/div&gt;&lt;hr color='#EB811B' size=1px width=796px&gt;&lt;/html&gt;
+
+---
+# College Attendance and Earnings
+
+How much money would a 40-year-old Massachusetts-born graduate of Harvard have made if he or she had come to UMass Amherst instead? 
+
+### Harvard's average mid-career salary: $98k
+### UMass's average mid-career salary: $83k
+
+Drew said regressions are grouped means:
+- If you're in the Harvard Group, your salary is $98k
+- And if you're in the UMass Group, your salary is $83k
+
+Is this a good answer? What might be wrong here? 
+
+---
+# Problem 1: Selection Bias
+
+When we run a regression, we are implicitly trying to understand a ***counterfactual***. If *Alice* had gone to UMass instead of Harvard, what would her earnings in particular look like? 
+
+When we look at group averages, we obscure what makes Harvard and UMass students different: 
+- Harvard students might have had higher SAT scores or high school grades
+- Or Harvard students have parents who run hedge funds and get them jobs at their hedge fund
+
+In economics, we call this ***selection bias***. It says that individuals are *selected* into our sample differently based on their characteristics. In this case, students who attend Harvard are fundamentally different from students who attend UMass.
+
+--
+
+The best way to solve this: randomization. 
+
+Imagine Harvard and UMass randomize which students they accept. Then, on average, Harvard and UMass students will have the same test scores on average and the same parental incomes. Thus any difference in average post-graduation earnings will be due to the college's *treatment effect*. 
+
+---
+# Problem 1: Selection Bias
+
+In economics, we usually can't randomize. We can alleviate some concerns by **matching on (controlling for) observables** though. In this case, we can use SAT scores and parental occupations to match students into groups, some of whom when to Harvard and some of whom went to UMass, and compare post-graduation earnings within those groups.
+
+In Mastering Metrics, the authors describe a different, clever matching strategy:
+&lt;img src="pics/mm_match.png" width="40%" style=padding:10px style="display: block; margin: auto;" /&gt;
+
+---
+# Controls
+
+We can break a regression into three parts:
+1. A dependent variable (our outcome)
+2. A treatment variable (what we're trying to study)
+3. Controls (variables that determine selection outside of our treatment)
+  - Intuitively: the groups we want to match people into
+  - Things we want to "hold fixed" 
+
+In the case of school applications, we would want to control for SAT scores, high school grades, and parental income (and probably more). In our gapminder example, we would want to control for "defender in long brutal war."
+
+What would we want to control for in the Mastering Metrics example? 
+
+---
+# Should we control for eye color? 
+
+--
+
+No! Eye color has nothing to do with how people select into treatment or what someone's post-graduation earnings look like. Be careful that you don't run "kitchen-sink" regressions.
+
+More broadly, be careful with how you use regressions. Data is more and more available these days, but that doesn't absolve you of responsibility. A brief history of bad regressions: 
+- 1835: Adolphe Quetelet starts doing social physics (first social scientist...), correlates social data together, tries to predict crime, poverty, alcohol consumption, etc
+- 1883: Francis Galton founds the field of eugenics 
+- 1991: "A glass of red wine per day is healthy"
+
+---
+# Bad Internet Infographics vs. Economics
+
+How can selection help us understand what's wrong with this figure? 
+
+&lt;img src="pics/hh_inc.png" width="60%" style=padding:10px style="display: block; margin: auto;" /&gt;
+
+--
+
+A hint: what would this graph look like if we randomized immigration to the US across countries? 
+
+---
+class:inverse 
+# Roy Model (Brief!)
+
+This actually goes back to a 1951 article in econ about people choosing between being a rabbit hunter or a fisher. But its more commonly known based on a 1987 article about determinants of immigration patterns. 
+
+Think about the distribution of skill in an economy and the distribution of wages. Three different scenarios can lead someone to immigrate to the US: 
+1. Someone is very talented in their home country and would be very talented in the US. A person can make more money in the US, so high-talent people immigrate.
+2. Someone is less talented in their home country and would be less talented in the US. The US has a better social safety net than their home country, so they'll be wealthier living in the US, and they decide to migrate here. 
+3. Someone is less talented in their home country and would be very talented in the US. This might happen if skills are valued differently in each country. Think about minority groups facing prejudice in their home country. Or, someone abroad who can eat 80 hotdogs in 5 minutes. 
+
+---
+# Back to the Chart
+
+So: why doesn't just matching on observables help us here? 
+
+&lt;img src="pics/hh_inc.png" width="40%" style=padding:10px style="display: block; margin: auto;" /&gt;
+
+--
+
+Without modeling the distribution of skills, the distribution of wages, and the way that societies value skills, the immigrant earning chart is total nonsense. (We *could* estimate returns to immigration using the Roy model though)
+
+---
+# Problem 2 (or 1b?): Omitted Variables Bias 
+
+Earlier, we said that, in our gapminder regression, we would want to control for "defender in a long and brutal war." We didn't want to control for "at war." Any guesses as to why this distinction matters? 
+
+
+```
+## `geom_smooth()` using formula = 'y ~ x'
+## `geom_smooth()` using formula = 'y ~ x'
+```
+
+&lt;img src="07-intro_regression_files/figure-html/unnamed-chunk-18-1.svg" style="display: block; margin: auto;" /&gt;
+
+---
+# Omitted Variables Bias 
+
+Anyone can be at war, no matter what your GDP is. So, while being at war certainly lowers a country's life expectancy, it merely shifts the entire line of best fit downwards (reduces the intercept). It **doesn't change the slope of the coefficient we care about**. 
+
+--
+
+Fighting a guerrilla war at home for 10+ years affects a country's GDP per capita and its life expectancy. When we don't control for the long and brutal war, we omit an important part of how a country's GDP per capita and life expectancies are determined. 
+
+More formally: Omitted variable bias arises when we forget to control for a quantity that affects our treatment variable and our dependent variable. 
+
+---
+# Calculating OVB
+
+Generally, omitted variables are hard to fix. Two methods: 
+1. Include the variable
+2. Model the variable (a la the Roy Model)
+
+---
+# Calculating OVB: Including the variable
+
+What is OVB numerically? 
+
+--
+
+It's the size of our treatment coefficient with the omitted variable included minus the size of our treatment coefficient with the omitted variable excluded. Using `gapminder`:
+
+
+``` r
+# Calculating OVB:
+res_with_ovb &lt;- lm(lifeExp ~ gdpPercap, data = gp_subset)
+ovb_coef = res_with_ovb[[1]][2]
+
+gp_subset$long_and_brutal_war = gp_subset[,"country"] == "Afghanistan"
+res_without_ovb &lt;- lm(lifeExp ~ gdpPercap + long_and_brutal_war, data = gp_subset)
+no_ovb_coef = res_without_ovb[[1]][2]
+
+print(cbind(ovb_coef,no_ovb_coef, ovb_coef-no_ovb_coef))
+```
+
+```
+##              ovb_coef  no_ovb_coef            
+## gdpPercap 0.000387841 0.0003454364 4.24046e-05
+```
+
+--
+
+Without controlling for the Afghanistan war, our original estimate of GDP per capita on life expectancy was too high! 
+
+---
+class: inverse
+# Modeling the Variable
+
+How are earnings determined? Famous question, important to get right. 
+
+We can start with Jacob Mincer's earnings function: 
+
+$$ ln(\text{wage}) = \beta_1 + \beta_2 \text{education} + \beta_3 \text{experience} + \beta_4 \text{experience}^2 + u  $$
+What's an important missing variable here? 
+
+--
+
+Ability. People with higher ability tend to obtain more years of education. To account for this, we can use some kind of standardized test scores (GRE, SAT, IQ) to model ability, which we can then put into our model of wages: 
+
+$$ \text{ability} = \gamma_1 + \gamma_2 \text{SAT} + v $$
+$$ ln(\text{wage}) = \beta_1 + \beta_2 \text{education} + \beta_3 \text{experience} + \beta_4 \text{experience}^2 + \beta_5 \text{ability} + u $$
+$$ ln(\text{wage}) = \beta_1 + \beta_2 \text{education} + \beta_3 \text{experience} + \beta_4 \text{experience}^2 + \beta_5 (\gamma_1 + \gamma_2 \text{SAT} + v) + u $$
+
+... of course, standardized tests bring about measurement error, which we won't cover in this class. 
+
+---
+# Two Kinds of Biases
+
+We've covered 2 kinds of biases to watch out for so far: 
+1. Selection Bias
+  - It says that individuals are *selected* into our sample differently based on their characteristics.
+    - What is the return on earnings for a competitive hot dog eater who moves to the US? It depends on how much their own country values hot dog eating 
+2. Omitted Variables Bias
+  - Arises when we forget to control for a quantity that affects our treatment variable and our dependent variable
+    - Those with higher ability go to more school, earn more money
+  
+Are these really separate ideas? Only sort of. Imo, thinking about selection as a process makes things a little cleaner. The Roy model isn't a missing variable, it's a missing process that determines who shows up in our datasets. But things are admittedly a little muddy. 
+
+---
+
+class: inverse, center, middle
+
+# Next lecture(s): Regression (Math and Coding, Optimization)
+
+&lt;html&gt;&lt;div style='float:left'&gt;&lt;/div&gt;&lt;hr color='#EB811B' size=1px width=796px&gt;&lt;/html&gt;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    </textarea>
+<style data-target="print-only">@media screen {.remark-slide-container{display:block;}.remark-slide-scaler{box-shadow:none;}}</style>
+<script src="https://remarkjs.com/downloads/remark-latest.min.js"></script>
+<script>var slideshow = remark.create({
+"highlightStyle": "github",
+"highlightLines": true,
+"countIncrementalSlides": false
+});
+if (window.HTMLWidgets) slideshow.on('afterShowSlide', function (slide) {
+  window.dispatchEvent(new Event('resize'));
+});
+(function(d) {
+  var s = d.createElement("style"), r = d.querySelector(".remark-slide-scaler");
+  if (!r) return;
+  s.type = "text/css"; s.innerHTML = "@page {size: " + r.style.width + " " + r.style.height +"; }";
+  d.head.appendChild(s);
+})(document);
+
+(function(d) {
+  var el = d.getElementsByClassName("remark-slides-area");
+  if (!el) return;
+  var slide, slides = slideshow.getSlides(), els = el[0].children;
+  for (var i = 1; i < slides.length; i++) {
+    slide = slides[i];
+    if (slide.properties.continued === "true" || slide.properties.count === "false") {
+      els[i - 1].className += ' has-continuation';
+    }
+  }
+  var s = d.createElement("style");
+  s.type = "text/css"; s.innerHTML = "@media print { .has-continuation { display: none; } }";
+  d.head.appendChild(s);
+})(document);
+// delete the temporary CSS (for displaying all slides initially) when the user
+// starts to view slides
+(function() {
+  var deleted = false;
+  slideshow.on('beforeShowSlide', function(slide) {
+    if (deleted) return;
+    var sheets = document.styleSheets, node;
+    for (var i = 0; i < sheets.length; i++) {
+      node = sheets[i].ownerNode;
+      if (node.dataset["target"] !== "print-only") continue;
+      node.parentNode.removeChild(node);
+    }
+    deleted = true;
+  });
+})();
+// add `data-at-shortcutkeys` attribute to <body> to resolve conflicts with JAWS
+// screen reader (see PR #262)
+(function(d) {
+  let res = {};
+  d.querySelectorAll('.remark-help-content table tr').forEach(tr => {
+    const t = tr.querySelector('td:nth-child(2)').innerText;
+    tr.querySelectorAll('td:first-child .key').forEach(key => {
+      const k = key.innerText;
+      if (/^[a-z]$/.test(k)) res[k] = t;  // must be a single letter (key)
+    });
+  });
+  d.body.setAttribute('data-at-shortcutkeys', JSON.stringify(res));
+})(document);
+(function() {
+  "use strict"
+  // Replace <script> tags in slides area to make them executable
+  var scripts = document.querySelectorAll(
+    '.remark-slides-area .remark-slide-container script'
+  );
+  if (!scripts.length) return;
+  for (var i = 0; i < scripts.length; i++) {
+    var s = document.createElement('script');
+    var code = document.createTextNode(scripts[i].textContent);
+    s.appendChild(code);
+    var scriptAttrs = scripts[i].attributes;
+    for (var j = 0; j < scriptAttrs.length; j++) {
+      s.setAttribute(scriptAttrs[j].name, scriptAttrs[j].value);
+    }
+    scripts[i].parentElement.replaceChild(s, scripts[i]);
+  }
+})();
+(function() {
+  var links = document.getElementsByTagName('a');
+  for (var i = 0; i < links.length; i++) {
+    if (/^(https?:)?\/\//.test(links[i].getAttribute('href'))) {
+      links[i].target = '_blank';
+    }
+  }
+})();
+// adds .remark-code-has-line-highlighted class to <pre> parent elements
+// of code chunks containing highlighted lines with class .remark-code-line-highlighted
+(function(d) {
+  const hlines = d.querySelectorAll('.remark-code-line-highlighted');
+  const preParents = [];
+  const findPreParent = function(line, p = 0) {
+    if (p > 1) return null; // traverse up no further than grandparent
+    const el = line.parentElement;
+    return el.tagName === "PRE" ? el : findPreParent(el, ++p);
+  };
+
+  for (let line of hlines) {
+    let pre = findPreParent(line);
+    if (pre && !preParents.includes(pre)) preParents.push(pre);
+  }
+  preParents.forEach(p => p.classList.add("remark-code-has-line-highlighted"));
+})(document);</script>
+
+<script>
+slideshow._releaseMath = function(el) {
+  var i, text, code, codes = el.getElementsByTagName('code');
+  for (i = 0; i < codes.length;) {
+    code = codes[i];
+    if (code.parentNode.tagName !== 'PRE' && code.childElementCount === 0) {
+      text = code.textContent;
+      if (/^\\\((.|\s)+\\\)$/.test(text) || /^\\\[(.|\s)+\\\]$/.test(text) ||
+          /^\$\$(.|\s)+\$\$$/.test(text) ||
+          /^\\begin\{([^}]+)\}(.|\s)+\\end\{[^}]+\}$/.test(text)) {
+        code.outerHTML = code.innerHTML;  // remove <code></code>
+        continue;
+      }
+    }
+    i++;
+  }
+};
+slideshow._releaseMath(document);
+</script>
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+(function () {
+  var script = document.createElement('script');
+  script.type = 'text/javascript';
+  script.src  = 'https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-MML-AM_CHTML';
+  if (location.protocol !== 'file:' && /^https?:/.test(script.src))
+    script.src  = script.src.replace(/^https?:/, '');
+  document.getElementsByTagName('head')[0].appendChild(script);
+})();
+</script>
+  </body>
+</html>
