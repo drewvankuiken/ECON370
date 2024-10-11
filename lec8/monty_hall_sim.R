@@ -11,29 +11,20 @@ monty_hall <- function(strategy="stay", guess_draw = runif(1)) {
 
 # Step 2: 
 # monty opens a door with a goat behind it
+  open_draw <- runif(1)
+  num_doors_to_open <- length(goats[goats != guess_1])
+  open_door <- goats[goats != guess_1][findInterval(open_draw,
+                                                    c(0,1/num_doors_to_open),
+                                                    rightmost.closed = T)] # double indexing!
   
 # Step 3:
 # player chooses strategy, we resolve who wins
+  guess_2 <- if(strategy=="stay"){
+    guess_1
+  }else {
+    doors[doors != guess_1 & doors != open_door]
+  }
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-# Step 2: 
-open_draw <- runif(1)
-num_doors_to_open <- length(goats[goats != guess_1])
-open_door <- goats[goats != guess_1][findInterval(open_draw,
-                                                  c(0,1/num_doors_to_open),
-                                                  rightmost.closed = T)] # double indexing!
-
-
 # resolve who wins
 win <- guess_2 == car
 return(win)
@@ -46,11 +37,7 @@ print(cbind(mean(switch_res), mean(stay_res)))
 
 
 ### solutions from class: 
-guess_2 <- if(strategy=="stay"){
-  guess_1
-}else {
-  doors[doors != guess_1 & doors != open_door]
-}
+
 
 
 
@@ -83,3 +70,7 @@ guess = function(g) {
     return(door_3)
   }
 }
+
+door_draw <- runif(1)
+goat_door <- goats[findInterval(door_draw,goats,rightmost.closed = T)]
+
