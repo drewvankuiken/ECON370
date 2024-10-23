@@ -1,0 +1,259 @@
+---
+title: "Outline of and Rubric for ECON370 Final Project"
+author: "Drew Van Kuiken"
+date: "University of North Carolina | [ECON 370](https://github.com/drewvankuiken/ECON370)" #"`r format(Sys.time(), '%d %B %Y')`"
+output: #html_document
+#  tufte::tufte_handout: default
+  tufte::tufte_html: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tufte)
+```
+
+# Final Project 
+## Overview
+
+The goal of your final project is to complete an independent[^1] data science project. This will consist of: 
+
+- A research question
+- Finding some data (likely multiple datasets)
+- Running some regressions
+- Creating some graphs and descriptive tables
+- A short (~5 slide) in-class presentation[^2]
+- A longer (~20 slide) presentation[^3] which the grader and I will review, but which will not be presented live
+- One or more R programs which provide the **full** workflow needed to replicate your results
+
+I describe each component in detail below. As a general rule: if you have questions, please ask them. If you feel lost, ***please come to my office hours***. I am more than happy to be a resource for you and help you through problems as they arise. 
+
+Note: LLMs are ***allowed*** on your final project and PS3. Please include information (a slide in your presentation/a comment in your HW submission) about what you used the LLM to do! 
+
+[^1]: No group work!
+[^2]: Presentations should be written using RMarkdown.
+[^3]: Think of this as an alternative to writing a ~10 page essay. Hopefully, it will be less work than that on your end, but it should be a significant work product
+
+## Rubric
+
+|Category | Points |
+|---------|--------|
+|**Conceptual**||
+|Research Question|15|
+|Has Data|15|
+|Reasonable regression(s)|15|
+|Relevant graphs and tables|15|
+|||
+|**Coding**||
+|Code does what it's supposed to|15|
+|Code runs without errors|15|
+|Exhibits good programming practices|15|
+|Appropriately commented|5|
+|Sanely organized|5|
+|||
+|**In-class presentation**||
+|Clear, cogent discussion of project|5|
+|Introduction/Research Question slide|5|
+|Data slide|5|
+|Findings (1)|5|
+|Findings (2)|5|
+|What did we learn / why is this important?|5|
+|||
+|**Final presentation**||
+|At least 15 slides|5|
+|Logical flow through topics|10|
+|Motivates project - why should we care?|15|
+|Discusses drawbacks to project|15|
+|At least 1 table and 1 graph|15|
+|At least 1 regression|15|
+|||
+|**Subtotal**|220|
+
+**Note:** Think of your in-class presentation as a discussion of "here's what I did, here's why it matters." Your extended slide deck should additionally answer "here's why I did what I did, here are some drawbacks and limitations." 
+
+# Research Questions
+
+Developing good research questions is an art and probably beyond the scope of this course as it stands. As a result, don't sweat your research question too much here. Mostly, I want you to identify an outcome of interest and one or more things to test against that outcome of interest. Most important is that you can identify a single question that forms the basis of your project. Note that you can make your project about whatever you're interested in. Don't feel like your project has to be about something formal and business-related.
+
+Broadly, there are two types of questions you can ask: descriptive questions and causal questions. 
+
+## Descriptive Questions
+Descriptive questions answer how things are. They *describe* the world. A simple example: what is 2+2? A more advanced, personal, example: how do users of a major airline's website differ in their search and purchasing behavior based on observable characteristics?[^4]
+
+Descriptive questions are famously underappreciated in academia, but they're super important in the real world. You're welcome to pursue a descriptive project in this class. As a general rule of thumb, descriptive projects should focus more on the data side of things. Think about what kinds of datasets might be interesting to combine and what insights you might get from linking two topics together. In the case of our airline paper, the paper exists basically because the data is so cool and rare. It's not often you get to see behind the curtain of an airline's website (or really any major corporation's website).
+
+Conversely, descriptive projects will frequently place less weight on the regression side of things. For the purposes of our final project, you should still have at least one regression (note that our airline paper has a couple regressions). Think of your regression as a descriptive object.[^5]
+
+[^4]: This is from a paper I've written. You can find a draft on my website if you're curious to learn more: [link](https://drewvankuiken.github.io/files/WhatCanWebTrafficRevealAboutDemand.pdf)
+[^5]: The descriptive-causal dichotomy maps rather neatly to our gapminder-returns to college examples from our classes on regression. The gapminder regression was definitely descriptive: what is the cost of being a defender in a war in terms of country-level life expectancy? The returns-to-college regression was more causal. After controlling for selection bias, we could ask: what is the financial return to attending Harvard relative to UMass? 
+
+
+## Causal Questions
+Causal questions answer whether a relationship exists between two objects. They are *why* questions. What causes something to increase (or decrease)? A simple example: how does your college determine your mid-career earnings? More advanced, more personal: how does competition affect the technology that solar panel producers adopt and develop?[^6]
+
+There are many, many things to learn about causal inference that we have not covered. Josh Angrist, Guido Imbens, and David Card won the economics Nobel prize in 2021 for what's been termed the "causal revolution" in economics. They developed a huge suite of controversial tools for trying to manipulate observational data such that it looks and acts like experimental data. It's cool stuff! I encourage you to learn more about it in future studies. 
+
+For our purposes, final projects that answer causal questions will lean more into discussions of (a) your attempts to match on observables, and (b) how bias might be affecting your results. It's a little less important that your data itself is interesting here. Instead, I'd like you to focus on asking exciting questions. 
+
+[^6]: No paper yet, check in with me in 2 years.
+
+# Finding Some Data
+
+Finding data stinks. It's really hard and sometimes it costs like $20,000. Below, I've tried to list every public data source I can think of. If nothing here appeals to you, come to my office hours and we can try to figure out how to find data on something that does interest you!
+
+Data Repositories: 
+
+- [Data.gov](https://data.gov/)[^7] 
+- [FRED](https://fred.stlouisfed.org/)[^8]
+- [UNC Libraries](https://library.unc.edu/data/research-analysis/)[^9]
+- [Kaggle](https://www.kaggle.com/datasets)[^10]
+  - Strict requirement: talk with me if you want to use Kaggle data.
+- [Bureau of Labor Statistics](https://data.bls.gov/toppicks?survey=bls) Employment, Productivity, Inflation, and Wages data
+- [ICPSR](https://www.icpsr.umich.edu/web/pages/ICPSR/index.html) huge repository, mostly american data
+- [Google](https://www.google.com/publicdata/directory) a product someone built and forgot about at Google, I assume
+- [IPUMS](https://www.ipums.org/) really cool surveys about demographics, prices, time use, higher ed, and health stuff
+  
+Topic-specific resources:
+
+- Industrial Organization (I currently use some of these things)
+  - [Airplanes](https://www.transtats.bts.gov/DatabaseInfo.asp?QO_VQ=EFI&Yv0x=D) 10% sample of all domestic air travel passengers! Many other resources on the website too. Check out the T100 database as well.
+  - [Solar Panels](https://emp.lbl.gov/tracking-the-sun) Crazy survey of most solar panel owners in the domestic US
+  - [Health stuff](https://www.shepscenter.unc.edu/data/) Several databases maintained by UNC. Might not have enough time to access these resources.
+  - [Medical Expenditures](https://meps.ahrq.gov/mepsweb/data_stats/data_overview.jsp) Household and insurance summary data about healthcare spending over time
+- Labor and other applied microeconomics
+  - [NLSY](https://www.bls.gov/nls/nlsy97.htm) yearly survey of youth jobs/time use/crime/earnings/school stuff. Incredible resource
+- Macroeconomics
+  - I would probably stick to FRED? And additionally stuff from the Bureau of Labor Statistics
+- Sports
+  - Football: [nflfastR](https://www.nflfastr.com/)
+  - Basketball: [hoopR](https://hoopr.sportsdataverse.org/) - men's college and professional basketball data, [wehoop](https://github.com/sportsdataverse/wehoop) - women's college and professional basketball data
+  - Hockey: [nhlapi](https://cran.r-project.org/web/packages/nhlapi/readme/README.html)
+  - Baseball: [baseballr](https://billpetti.github.io/baseballr/)
+- Something you scraped
+- A Monte Carlo simulation you ran
+  - Chat with me if you're interested in this, we can try to figure something out
+
+[^7]: Phenomenal resource. I'd recommend viewing datasets by popularity. I can think of a bunch of incredibly successful projects based on even the first few datasets listed there
+[^8]: Maintained by the Federal Reserve Board of St. Louis, has incredible data on mostly macro-economic time-series. Likely a source for additional data for you (e.g., if you want to know how local greenhouse gas emissions affect electric vehicle adoption, might also be helpful to know how inflation changed over the time period you're looking at.)
+[^9]: We have an economics department affiliated data person as well. Her name is Nancy Lovas. Let me know if you'd like me to put you in contact with her. 
+[^10]: Also a great place for you to practice data science coding in general!
+
+# Data Processing and Analysis 
+
+It's hard for me to be prescriptive here - what's required of you will depend on your question and your data. In general, it is hard for me to think of a project that wouldn't benefit from multiple data sources or datasets.[^11] Additionally, your project will almost certainly involve "cleaning" the data. To do so, you should deal with missing or incorrect information, create variables where needed, and normalize units where relevant.[^12] Be thoughtful about how each observation in your data relates to the question you're asking. 
+
+Let's look at an example. Consider a project about solar panel manufacturers and technology choices. A bit of background: for our purposes, there are two main technologies used in solar panels, multicrystalline silicon and monocrystalline silicon. Both have been produced for the past 15 years, though monocrystalline silicon is becoming increasingly popular. Multicrystalline silicon is cheaper but less efficient. If consumers have preferences over price and efficiency, you can imagine producers wanting to sell one cheap, low-efficiency panel, and one expensive, high-efficiency panel. 
+
+Before thinking about a research question and formal regression model, we might want to start with some graphs. Over the past 15 years, for each manufacturer in the data, what did their newly developed products look like? How did the efficiency of their low-cost multicrystalline products and their high-cost monocrystalline products develop over time?
+
+Let's take a look at the Tracking the Sun database to get a sense of this: 
+```{r}
+library(tidyverse)
+library(data.table)
+library(ggrepel)
+
+### goal: create single-dimension plots of efficiencies by technology type and 
+###       firm identity for each year of the data. subset to firms with X%
+###       market share.
+
+###
+# note to students: the tracking the sun data file is saved to our sharepoint folder if you're interested in running 
+# this code on your own machine. be careful though, the file is pretty large (>1gb)
+path <- '~/Desktop/Research/solar/data/raw/Tracking the Sun 2023 Data File/'
+# Read in TTS data
+tts_raw = read_csv(paste0(path,'/TTS_LBNL_public_file_27-Oct-2023_all.csv'))
+
+glimpse(tts_raw)
+```
+
+That's a lot of -1s. If we look at the documentation, we see that missing data is coded as -1! 
+
+When is an observation missing just too much data? It's probably fine if we don't have any azimuth data. On the other hand, if we don't have a date of purchase, it'll be literally impossible for us to put the observation into a graph. We probably also want to subset to observations where the manufacturer is available, the quantity purchased is available, and which include only solar panels:
+```{r}
+# subset - missing years are encoded as NaT
+tts_sub = tts_raw |> filter(!near(efficiency_module_1, -1, 0.01)) |>
+                     filter(technology_type == "pv-only", 
+                            module_manufacturer_1 != "-1", 
+                            module_quantity_1 > -1, 
+                            installation_date != "NaT") |>
+  mutate(year = year(dmy(installation_date)))
+
+glimpse(tts_sub)
+```
+
+Looks a lot better. Some of these manufacturers are a little weird though: Sanyo Electric and CSI Solar are big-name manufacturers, ET Solar is really not. 
+
+We could look up a list of big solar manufacturers and subset to that list, but that method would be a little ad hoc. Instead, we can go and calculate yearly market shares. Then we can use a market share threshold to select big manufacturers over time. 
+```{r}
+# manuf market shares 
+shares = tts_sub |> group_by(year) |> 
+  mutate(market_sales = sum(module_quantity_1, na.rm=TRUE)) |>
+  group_by(module_manufacturer_1, year, market_sales) |> 
+  summarize(manuf_sales = sum(module_quantity_1, na.rm = TRUE),
+            shares = manuf_sales / first(market_sales),
+            .groups = "drop") |>
+  select(year, module_manufacturer_1, manuf_sales, market_sales, shares)
+head(shares)
+
+# subset to firms with 10% market share, get list of names
+top_firm_data = shares |> filter(shares >= 0.10, year >= 2010) |> 
+  group_by(year) |> mutate(top_firm_share = sum(shares)) |> ungroup()
+top_firms = top_firm_data |> select(module_manufacturer_1) |> distinct()
+flist = as.list(top_firms$module_manufacturer_1)
+print(flist)
+```
+
+CSI made our cut, but Sanyo didn't! Good thing we didn't trust the Panasonic name - they must not be a big player in the US.
+
+Okay. Next: subset to firms only in the top firm list and find their top efficiency module per year:
+```{r}
+# subset tts_sub to firm list, find top efficiency module per year
+module_efficiency = tts_sub |> filter(module_manufacturer_1 %in% flist) |>
+  group_by(module_manufacturer_1, technology_module_1, year) |>
+  mutate(manuf_max_eff = max(efficiency_module_1)) |> 
+  group_by(year, module_manufacturer_1, module_model_1, 
+           manuf_max_eff, technology_module_1) |>
+  summarize(price = mean(total_installed_price), 
+            efficiency = mean(efficiency_module_1), 
+            .groups = "drop")
+# generate year-manufacturer-technology-max efficiency df
+manuf_tech_eff = module_efficiency |> 
+  select(year, module_manufacturer_1, technology_module_1, manuf_max_eff) |>
+  distinct() |>
+  filter(year >= 2010, str_detect(technology_module_1,regex("Monocrystalline|Polycrystalline")))
+head(manuf_tech_eff)
+```
+
+We're almost there. Now we know the max panel efficiency for each manufacturer-year-technology group in our data. All that's left is to plot that data!
+
+```{r}
+# create ladder plot for 2010
+years = 2010:2022
+manuf_tech_eff$technology_module_1 = as.factor(manuf_tech_eff$technology_module_1)
+
+plot_maxes <- function(z) ggplot(manuf_tech_eff[manuf_tech_eff$module_manufacturer_1 == z,],
+                                 aes(x=year,y=manuf_max_eff, col=technology_module_1, 
+                                     shape=technology_module_1)) +
+                              labs(title=paste("Yearly Max Model Efficiencies for ",z),
+                                   x="Year",y="Module Efficiency", shape="Technology",
+                                   col="Technology") + 
+                              geom_point() + 
+                              theme_minimal()
+p <- lapply(flist,plot_maxes)
+p[[1]]
+```
+
+[^11]: For a lot of potential projects, this could include stuff like demographic information from the American Community Survey, price indices from the BLS, or macro-economic variables from FRED. 
+[^12]: Different projects will have different cleaning requirements. A paper I'm writing using the DB1B airline data has about ~3,000 lines of (admittedly inefficient) cleaning code in Stata; for the descriptive airline paper I'm writing, cleaning another data source (scraped information from Google Flights) only required ~100 lines of cleaning code. Note: I am ***not*** suggesting you should write 3,000 or even 100 lines of cleaning code! Just that the proper amount of cleaning totally depends on your application. Almost all datasets require *some* cleaning though.
+
+# Presentations
+
+Your final project will consist of the code you wrote and two presentations you created. The first presentation will be a 5-slide, 5-minute presentation you deliver during our scheduled exam time. The second presentation will be a final work product. While you'll never present it per se, the grader and I will use it to assess your final project. 
+
+I'm going to be fairly prescriptive about what's in the in-class presentation. I expect 5 slides in total: an introduction slide, which contains your research question and a brief motivation as to why we should care about your question; a data slide, which describes the datasets you're using; 2 slides for findings - your discretion as to what's included here, but this would be a nice place to show a graph and/or a regression table; and one slide to wrap up. Think about this as being similar to a presentation you'd give in a workplace. Remember not to use too many words on your slides!
+
+The 20-slide presentation, your final work product, can be more involved. In it, I'd like you to be more explicit about your project: show us what the data looks like, what kind of cleaning you did, what the assumptions and drawbacks are to your regression, and so on. Think of it as an essay in slide deck format. 
+
+I'd like both presentations to be done in RMarkdown. You can use my slides from this semester as a template. 
+
+
+
