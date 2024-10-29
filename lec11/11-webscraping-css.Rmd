@@ -1,0 +1,491 @@
+---
+title: "Data Science for Economists"
+# subtitle: "<html><div style='float:left'></div><hr color='#EB811B' size=1px width=796px></html>"
+subtitle: "Lecture 11: Webscraping part 1 - CSS"
+author: "Drew Van Kuiken"
+date: "University of North Carolina | [ECON 370](https://github.com/drewvankuiken/ECON370)" #"`r format(Sys.time(), '%d %B %Y')`"
+output:
+  xaringan::moon_reader:
+    css: [default, metropolis, metropolis-fonts, "libs/cols.css"] 
+    lib_dir: libs
+    nature:
+      beforeInit: "libs/cols_macro.js"
+      highlightStyle: github
+      highlightLines: true
+      highlightSpans: false
+      countIncrementalSlides: false
+---
+<!-- output:  -->
+<!--   html_document: -->
+<!--     theme: flatly -->
+<!--     highlight: haddock -->
+<!--     # code_folding: show -->
+<!--     toc: yes -->
+<!--     toc_depth: 4 -->
+<!--     toc_float: yes -->
+<!--     keep_md: false -->
+<!--     keep_tex: false ## Change to true if want keep intermediate .tex file -->
+<!--     css: css/preamble.css ## For multi-col environments -->
+<!--   pdf_document: -->
+<!--     latex_engine: xelatex -->
+<!--     toc: true -->
+<!--     dev: cairo_pdf -->
+<!--     # fig_width: 7 ## Optional: Set default PDF figure width -->
+<!--     # fig_height: 6 ## Optional: Set default PDF figure height -->
+<!--     includes: -->
+<!--       in_header: tex/preamble.tex ## For multi-col environments -->
+<!--     pandoc_args: -->
+<!--         --template=tex/mytemplate.tex ## For affiliation field. See: https://bit.ly/2T191uZ -->
+<!-- always_allow_html: true -->
+<!-- urlcolor: blue -->
+<!-- mainfont: cochineal -->
+<!-- sansfont: Fira Sans -->
+<!-- monofont: Fira Code ## Although, see: https://tex.stackexchange.com/q/294362 -->
+<!-- ## Automatically knit to both formats: -->
+<!-- knit: (function(inputFile, encoding) { -->
+<!--  rmarkdown::render(inputFile, encoding = encoding,  -->
+<!--  output_format = 'all')  -->
+<!--  }) -->
+<!-- --- -->
+
+```{r setup, include=FALSE}
+options(htmltools.dir.version = FALSE)
+library(knitr)
+library(fontawesome)
+opts_chunk$set(
+  fig.align="center", fig.width=6, fig.height=3.5, 
+  # out.width="748px", #out.length="520.75px",
+  dpi=300, #fig.path='Figs/',
+  cache=T#, echo=F, warning=F, message=F
+  )
+```
+
+# The Internet as Data
+
+Let's get it onto our computers. 
+
+--
+
+For today, load **rvest** and **janitor** into your R session, alongside **tidyverse**, **lubridate**, **data.table**, and **hrbrthemes**
+
+```{r}
+## Load and install the packages that we'll be using today
+if (!require("pacman")) install.packages("pacman")
+pacman::p_load(tidyverse, rvest, lubridate, janitor, data.table, hrbrthemes)
+## ggplot2 plotting theme (optional)
+theme_set(hrbrthemes::theme_ipsum())
+```
+
+Much credit to Grant McDermott for the content on these slides.
+
+---
+# Internet Data Is Stored in 2 Ways:
+
+1. Server-side
+  - Data stored at the server, which sends HTML code with data in it to us
+  - **Our process**: trudging through CSS selectors
+2. Client-side
+  - Our browser requests data from the server, server sends specific info we asked for
+  - **Our process**: pinging an API endpoint
+
+This lecture will focus on server-side scraping; we'll do client-side scraping next
+
+---
+# Before we get started
+
+1. Be a good internet user
+2. It's easy to accidentally kill some poor website
+3. It's probably legal? 
+
+--
+
+Our main package today is **rvest**, part of the tidyverse. Based on **Beautiful Soup**
+
+---
+# HTML Basics
+
+Here's some simple HTML:
+
+```html
+<html>
+<head>
+  <title>Page title</title>
+</head>
+<body>
+  <h1 id='first'>A heading</h1> 
+  <p>Some text &amp; <b>some bold text.</b></p>
+  <img src='myimg.png' width='100' height='100'>
+</body>
+```
+
+---
+# HTML Basics
+
+Here's some simple HTML:
+
+```html
+<html>
+<head> ## head is an element #<<
+  <title>Page title</title>
+</head>
+<body>
+  <h1 id='first'>A heading</h1>  
+  <p>Some text &amp; <b>some bold text.</b></p>
+  <img src='myimg.png' width='100' height='100'>
+</body>
+```
+
+---
+# HTML Basics
+
+Here's some simple HTML:
+
+```html
+<html>
+<head> 
+  <title>Page title</title>
+</head>
+<body> ## as is body #<<
+  <h1 id='first'>A heading</h1>  
+  <p>Some text &amp; <b>some bold text.</b></p>
+  <img src='myimg.png' width='100' height='100'>
+</body>
+```
+
+---
+# HTML Basics
+
+Here's some simple HTML:
+
+```html
+<html>
+<head> 
+  <title>Page title</title>
+</head>
+<body> 
+  <h1 id='first'>A heading</h1> ## id='first' is an attribute #<< 
+  <p>Some text &amp; <b>some bold text.</b></p>
+  <img src='myimg.png' width='100' height='100'>
+</body>
+```
+
+---
+# HTML Basics
+
+Here's some simple HTML:
+
+```html
+<html>
+<head> 
+  <title>Page title</title>
+</head>
+<body> 
+  <h1 id='first'>A heading</h1> 
+  <p>Some text &amp; <b>some bold text.</b></p> ## stuff in between is contents #<< 
+  <img src='myimg.png' width='100' height='100'>
+</body>
+```
+
+Lucky for us: we don't need to write HTML. Just read it. 
+
+---
+# HTML Basics - Tags
+
+- Tags all start with `<tag>` and end with `</tag>`
+- Every page is in an `<html>` element with 2 children: 
+  - `<head>` contains metadata
+  - `<body>` contains content you see
+- Block tags form the overall structure of a page
+  - `<h1>` provides a heading
+  - `<p>` is a paragraph
+- Inline tags like `<b>` (bold), `<i>` (italics), and `<a>` (links) exist
+- Just a sample of tags, can look up others you don't know
+- The rest is the content
+
+---
+# Example 1: Scraping Wikipedia
+
+Let's imagine we want to scrape the [Men's 100 metres world record progression](https://en.wikipedia.org/wiki/Men%27s_100_metres_world_record_progression) page on Wikipedia.
+
+In particular, we want to get the information from the 3 main tables on the webpage. 
+
+Here's what happens when we give R no instructions at all:
+```{r}
+raw_wiki <- read_html("https://en.wikipedia.org/wiki/Men%27s_100_metres_world_record_progression")
+raw_wiki
+class(raw_wiki)
+```
+
+---
+# Parsing HTML: Inspecting Web Pages
+
+We can use `inspect` to get a better sense of what is available on a given webpage. What tags can we use to grab the desired information from our wikipedia page? 
+
+--
+
+It looks like we want to grab information from tables with the class "wikitable."
+
+
+---
+# Brief Aside: CSS Selectors
+
+We can parse HTML using **CSS Selectors**, which define patterns for locating HTML elements. 
+
+CSS Selectors are pretty complex, and we're going to keep it light today. If you want to learn more, check out the [CSS Diner](https://flukeout.github.io/). Additionally, if CSS Selectors are giving you tons of trouble, check out [SelectorGadget](https://selectorgadget.com/).
+
+4 selectors to know:
+1. `p` selects all `<p>` elements
+2. `.title` selects all elements with `class` "title"
+3. `p.special` selects all `<p>` elements with `class` "special"
+4. `#title` selects the unique element with id attribute that equals "title"
+
+---
+# Getting Our Tables
+
+We can use the selector `table` to select all `<table>` elements:
+
+```{r}
+raw_wiki |> html_elements("table")
+```
+
+--
+
+Alas, so are many other things. 
+
+---
+# Trying again
+
+We want tables with class wikitable: `table.wikitable` should work!
+
+```{r}
+raw_wiki |> html_elements("table.wikitable")
+```
+
+Looks better! 
+
+---
+# Accessing the actual info
+
+We still don't have the table info. `html_table()` can help:
+
+```{r}
+table_dfs <- raw_wiki |> html_elements("table.wikitable") |> 
+  html_table()
+table_dfs[[1]]
+```
+
+...this is crazy! `R` is cool sometimes. 
+
+---
+# General Workflow
+
+Your workflow using `rvest`: get html --> get desired html elements --> break into individual elements --> turn into table/text/numbers/whatever.
+
+Useful commands for getting individual elements: 
+- `html_text2()` gets plain text contents of an HTML element
+- `html_attr()` gets attributes from an HTML element (e.g., links)
+- `html_table()` creates a data.frame from a table in an HTML element
+
+
+---
+# A Little Cleanup
+
+Let's get our data frames in working order here: 
+
+```{r}
+table_dfs_int <- raw_wiki |> html_elements("table.wikitable") |> 
+  html_table()
+
+table_dfs <- lapply(table_dfs_int[c(1,3,4)], # drop unwanted tables
+                    function(x) x |>
+                      clean_names() |> ## fix colnames, from the janitor package #<<
+                      mutate(date = mdy(date))) ## from lubridate
+table_dfs[[1]]
+```
+
+Let's combine our data frames into one and graph the results. 
+
+---
+# Combined Data
+
+```{r}
+wr100 <- rbind(
+  table_dfs[[1]] |> select(time, athlete, nationality, date) |> 
+    mutate(era="Pre-IAAF"),
+  table_dfs[[2]] |> select(time, athlete, nationality, date) |> 
+    mutate(era="Pre-automatic"),
+  table_dfs[[3]] |> select(time, athlete, nationality, date) |> 
+    mutate(era="Modern")
+)
+head(wr100)
+```
+
+---
+# Dot Plot
+
+```{r, echo=FALSE}
+wr100 |> ggplot(aes(x=date,y=time,col=fct_reorder2(era,date,time))) +
+  geom_point(alpha=0.7) +
+  labs(title = "Men's 100m World Record Progression", x="Date", y="Time") + 
+  theme(legend.title = element_blank()) # switch off legend title
+```
+
+That was easy. How about something harder. 
+
+---
+# Craigslist  - Watch Prices
+
+Let's take a look at watch prices on [Craigslist in Raleigh](https://raleigh.craigslist.org/search/jwa?query=watch#search=1~gallery~0~0).
+
+We want to know: listing names, prices, locations, and links for the Raleigh craigslist. 
+
+Use the shell code below to poke around and see if you can download the information we want.
+
+```{r, eval=FALSE}
+# read in html, get listing info
+web <- "https://raleigh.craigslist.org/search/jwa?query=watch#search=1~gallery~0~0"
+craigslist_listings <- read_html(web)|>
+  html_elements("[INSERT ELEMENTS TO GET CODE HERE]") 
+craigslist_listings[[1]]
+```
+
+(Remember our basic strategy: `read_html` --> `html_elements` --> `html_element` --> `html_text2`. We're covering steps 1 and 2 here, don't worry about having your output look perfect.)
+
+---
+# My Solution
+
+(Admittedly, it took a while for me to figure this out. Art, not science.)
+
+All kinds of info is saved in `li a`!
+
+We can use `html_elements()` to find an element that corresponds to each listing, then use `html_element()` to extract each individual variable:
+
+```{r}
+# read in html, get listing info
+web <- "https://raleigh.craigslist.org/search/jwa?query=watch#search=1~gallery~0~0"
+craigslist_listings <- read_html(web) |> html_elements("li a") 
+craigslist_listings[[1]]
+```
+
+Looks promising!
+
+---
+# Diving Deeper
+
+```{r}
+# follow branching tree further:
+# title of listing
+title <- craigslist_listings |> html_elements("div.title") |> html_text2()
+
+# seems like 2 pieces of info stored in div.details
+details <- craigslist_listings |> html_elements("div.details")
+price <- details |> html_element("div.price") |> html_text2()
+location <- details |> html_element("div.location") |> html_text2()
+
+# we can use html_attr to grab the link to the listing
+link <- craigslist_listings |> html_attr("href")
+```
+
+---
+# Taking a Look at Our Data
+
+```{r}
+title[1]
+price[1]
+location[1]
+link[1]
+```
+
+Looking *really* good
+
+---
+# Stick them in a data frame, clean up
+
+```{r}
+watch_data <- data.frame(title,price,location,link) |> 
+  mutate(price = parse_number(price), # get rid of $s
+         clean_location = case_when(
+           grepl("durham",location, ignore.case=TRUE) ~ "Durham",
+           grepl("cary|apex",location, ignore.case=TRUE) ~ "Cary",
+           grepl("raleigh",location, ignore.case=TRUE) ~ "Raleigh",
+           grepl("chapel hill",location, ignore.case=TRUE) ~ "Chapel Hill",
+           grepl("wake forest",location, ignore.case=TRUE) ~ "Wake Forest",
+           .default = "Other"
+         )) |> 
+  filter(price>0)
+```
+
+How about another plot? 
+
+---
+# Plot
+
+```{r, echo=FALSE}
+watch_data |> ggplot(aes(x=clean_location, y=price)) + 
+  geom_boxplot(aes(fill=clean_location), show.legend = FALSE,
+               shape = 21, size = .5) +
+  scale_colour_viridis_d(option = "magma") +
+  labs(title="Watches for sale near Raleigh, NC",
+       x="Seller Location",
+       y="Price (USD)") +
+  theme_ipsum()
+```
+
+---
+# Plot (for students)
+
+```{r, echo=FALSE}
+w_cheap <- watch_data |> filter(price < 1000) |> ggplot(aes(x=clean_location, y=price)) + 
+  geom_boxplot(aes(fill=clean_location), show.legend = FALSE,
+               shape = 21, size = .5) +
+  scale_colour_viridis_d(option = "magma") +
+  labs(title="Watches for sale near Raleigh, NC",
+       x="Seller Location",
+       y="Price (USD)") +
+  theme_ipsum()
+w_cheap
+```
+
+Sidenote: Wake Forest is gone! 
+
+---
+# Summary
+
+There's two ways to get data from the internet: server-side and client-side
+
+We covered the server-side stuff today
+
+To do so, we did some mucking around with CSS selectors
+
+It is an art, not a science. 
+
+---
+# Another Tool
+
+Our approach worked pretty well for Craigslist, but we also got fairly lucky: there was only one page of search results when I wrote these notes. 
+
+It turns out you can use R to drive your actual computer, clicking on buttons (like Next Page) and so on. 
+
+You can do this using [RSelenium](https://cran.r-project.org/web/packages/RSelenium/index.html), which is a huge pain but sometimes incredibly cool.
+
+---
+# Next Class
+
+We'll be downloading macroeconomic data from [FRED](https://fred.stlouisfed.org/)
+
+Before class ***please*** make an account with FRED [https://fredaccount.stlouisfed.org/login/secure/](https://fredaccount.stlouisfed.org/login/secure/)
+
+and obtain an API key [https://fredaccount.stlouisfed.org/apikey](https://fredaccount.stlouisfed.org/apikey)!!!
+
+PS: your api key is a secret, don't share it with people
+
+---
+class: inverse, center, middle
+
+# Next lecture: Scraping Client-Side with APIs
+<html><div style='float:left'></div><hr color='#EB811B' size=1px width=796px></html>
+
+```{r gen_pdf, include = FALSE, cache = FALSE, eval = TRUE}
+infile = list.files(pattern = '.html')
+#pagedown::chrome_print(input = infile, timeout = 100)
+```

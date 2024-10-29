@@ -1,0 +1,738 @@
+<!DOCTYPE html>
+<html lang="" xml:lang="">
+  <head>
+    <title>Data Science for Economists</title>
+    <meta charset="utf-8" />
+    <meta name="author" content="Drew Van Kuiken" />
+    <script src="libs/header-attrs/header-attrs.js"></script>
+    <link href="libs/remark-css/default.css" rel="stylesheet" />
+    <link href="libs/remark-css/metropolis.css" rel="stylesheet" />
+    <link href="libs/remark-css/metropolis-fonts.css" rel="stylesheet" />
+    <link rel="stylesheet" href="libs/cols.css" type="text/css" />
+  </head>
+  <body>
+    <textarea id="source">
+class: center, middle, inverse, title-slide
+
+.title[
+# Data Science for Economists
+]
+.subtitle[
+## Lecture 11: Webscraping part 1 - CSS
+]
+.author[
+### Drew Van Kuiken
+]
+.date[
+### University of North Carolina | <a href="https://github.com/drewvankuiken/ECON370">ECON 370</a>
+]
+
+---
+
+&lt;!-- output:  --&gt;
+&lt;!--   html_document: --&gt;
+&lt;!--     theme: flatly --&gt;
+&lt;!--     highlight: haddock --&gt;
+&lt;!--     # code_folding: show --&gt;
+&lt;!--     toc: yes --&gt;
+&lt;!--     toc_depth: 4 --&gt;
+&lt;!--     toc_float: yes --&gt;
+&lt;!--     keep_md: false --&gt;
+&lt;!--     keep_tex: false ## Change to true if want keep intermediate .tex file --&gt;
+&lt;!--     css: css/preamble.css ## For multi-col environments --&gt;
+&lt;!--   pdf_document: --&gt;
+&lt;!--     latex_engine: xelatex --&gt;
+&lt;!--     toc: true --&gt;
+&lt;!--     dev: cairo_pdf --&gt;
+&lt;!--     # fig_width: 7 ## Optional: Set default PDF figure width --&gt;
+&lt;!--     # fig_height: 6 ## Optional: Set default PDF figure height --&gt;
+&lt;!--     includes: --&gt;
+&lt;!--       in_header: tex/preamble.tex ## For multi-col environments --&gt;
+&lt;!--     pandoc_args: --&gt;
+&lt;!--         --template=tex/mytemplate.tex ## For affiliation field. See: https://bit.ly/2T191uZ --&gt;
+&lt;!-- always_allow_html: true --&gt;
+&lt;!-- urlcolor: blue --&gt;
+&lt;!-- mainfont: cochineal --&gt;
+&lt;!-- sansfont: Fira Sans --&gt;
+&lt;!-- monofont: Fira Code ## Although, see: https://tex.stackexchange.com/q/294362 --&gt;
+&lt;!-- ## Automatically knit to both formats: --&gt;
+&lt;!-- knit: (function(inputFile, encoding) { --&gt;
+&lt;!--  rmarkdown::render(inputFile, encoding = encoding,  --&gt;
+&lt;!--  output_format = 'all')  --&gt;
+&lt;!--  }) --&gt;
+&lt;!-- --- --&gt;
+
+
+
+# The Internet as Data
+
+Let's get it onto our computers. 
+
+--
+
+For today, load **rvest** and **janitor** into your R session, alongside **tidyverse**, **lubridate**, **data.table**, and **hrbrthemes**
+
+
+``` r
+## Load and install the packages that we'll be using today
+if (!require("pacman")) install.packages("pacman")
+pacman::p_load(tidyverse, rvest, lubridate, janitor, data.table, hrbrthemes)
+## ggplot2 plotting theme (optional)
+theme_set(hrbrthemes::theme_ipsum())
+```
+
+Much credit to Grant McDermott for the content on these slides.
+
+---
+# Internet Data Is Stored in 2 Ways:
+
+1. Server-side
+  - Data stored at the server, which sends HTML code with data in it to us
+  - **Our process**: trudging through CSS selectors
+2. Client-side
+  - Our browser requests data from the server, server sends specific info we asked for
+  - **Our process**: pinging an API endpoint
+
+This lecture will focus on server-side scraping; we'll do client-side scraping next
+
+---
+# Before we get started
+
+1. Be a good internet user
+2. It's easy to accidentally kill some poor website
+3. It's probably legal? 
+
+--
+
+Our main package today is **rvest**, part of the tidyverse. Based on **Beautiful Soup**
+
+---
+# HTML Basics
+
+Here's some simple HTML:
+
+```html
+&lt;html&gt;
+&lt;head&gt;
+  &lt;title&gt;Page title&lt;/title&gt;
+&lt;/head&gt;
+&lt;body&gt;
+  &lt;h1 id='first'&gt;A heading&lt;/h1&gt; 
+  &lt;p&gt;Some text &amp;amp; &lt;b&gt;some bold text.&lt;/b&gt;&lt;/p&gt;
+  &lt;img src='myimg.png' width='100' height='100'&gt;
+&lt;/body&gt;
+```
+
+---
+# HTML Basics
+
+Here's some simple HTML:
+
+```html
+&lt;html&gt;
+&lt;head&gt; ## head is an element #&lt;&lt;
+  &lt;title&gt;Page title&lt;/title&gt;
+&lt;/head&gt;
+&lt;body&gt;
+  &lt;h1 id='first'&gt;A heading&lt;/h1&gt;  
+  &lt;p&gt;Some text &amp;amp; &lt;b&gt;some bold text.&lt;/b&gt;&lt;/p&gt;
+  &lt;img src='myimg.png' width='100' height='100'&gt;
+&lt;/body&gt;
+```
+
+---
+# HTML Basics
+
+Here's some simple HTML:
+
+```html
+&lt;html&gt;
+&lt;head&gt; 
+  &lt;title&gt;Page title&lt;/title&gt;
+&lt;/head&gt;
+&lt;body&gt; ## as is body #&lt;&lt;
+  &lt;h1 id='first'&gt;A heading&lt;/h1&gt;  
+  &lt;p&gt;Some text &amp;amp; &lt;b&gt;some bold text.&lt;/b&gt;&lt;/p&gt;
+  &lt;img src='myimg.png' width='100' height='100'&gt;
+&lt;/body&gt;
+```
+
+---
+# HTML Basics
+
+Here's some simple HTML:
+
+```html
+&lt;html&gt;
+&lt;head&gt; 
+  &lt;title&gt;Page title&lt;/title&gt;
+&lt;/head&gt;
+&lt;body&gt; 
+  &lt;h1 id='first'&gt;A heading&lt;/h1&gt; ## id='first' is an attribute #&lt;&lt; 
+  &lt;p&gt;Some text &amp;amp; &lt;b&gt;some bold text.&lt;/b&gt;&lt;/p&gt;
+  &lt;img src='myimg.png' width='100' height='100'&gt;
+&lt;/body&gt;
+```
+
+---
+# HTML Basics
+
+Here's some simple HTML:
+
+```html
+&lt;html&gt;
+&lt;head&gt; 
+  &lt;title&gt;Page title&lt;/title&gt;
+&lt;/head&gt;
+&lt;body&gt; 
+  &lt;h1 id='first'&gt;A heading&lt;/h1&gt; 
+  &lt;p&gt;Some text &amp;amp; &lt;b&gt;some bold text.&lt;/b&gt;&lt;/p&gt; ## stuff in between is contents #&lt;&lt; 
+  &lt;img src='myimg.png' width='100' height='100'&gt;
+&lt;/body&gt;
+```
+
+Lucky for us: we don't need to write HTML. Just read it. 
+
+---
+# HTML Basics - Tags
+
+- Tags all start with `&lt;tag&gt;` and end with `&lt;/tag&gt;`
+- Every page is in an `&lt;html&gt;` element with 2 children: 
+  - `&lt;head&gt;` contains metadata
+  - `&lt;body&gt;` contains content you see
+- Block tags form the overall structure of a page
+  - `&lt;h1&gt;` provides a heading
+  - `&lt;p&gt;` is a paragraph
+- Inline tags like `&lt;b&gt;` (bold), `&lt;i&gt;` (italics), and `&lt;a&gt;` (links) exist
+- Just a sample of tags, can look up others you don't know
+- The rest is the content
+
+---
+# Example 1: Scraping Wikipedia
+
+Let's imagine we want to scrape the [Men's 100 metres world record progression](https://en.wikipedia.org/wiki/Men%27s_100_metres_world_record_progression) page on Wikipedia.
+
+In particular, we want to get the information from the 3 main tables on the webpage. 
+
+Here's what happens when we give R no instructions at all:
+
+``` r
+raw_wiki &lt;- read_html("https://en.wikipedia.org/wiki/Men%27s_100_metres_world_record_progression")
+raw_wiki
+```
+
+```
+## {html_document}
+## &lt;html class="client-nojs vector-feature-language-in-header-enabled vector-feature-language-in-main-page-header-disabled vector-feature-sticky-header-disabled vector-feature-page-tools-pinned-disabled vector-feature-toc-pinned-clientpref-1 vector-feature-main-menu-pinned-disabled vector-feature-limited-width-clientpref-1 vector-feature-limited-width-content-enabled vector-feature-custom-font-size-clientpref-1 vector-feature-appearance-pinned-clientpref-1 vector-feature-night-mode-enabled skin-theme-clientpref-day vector-toc-available" lang="en" dir="ltr"&gt;
+## [1] &lt;head&gt;\n&lt;meta http-equiv="Content-Type" content="text/html; charset=UTF-8 ...
+## [2] &lt;body class="skin--responsive skin-vector skin-vector-search-vue mediawik ...
+```
+
+``` r
+class(raw_wiki)
+```
+
+```
+## [1] "xml_document" "xml_node"
+```
+
+---
+# Parsing HTML: Inspecting Web Pages
+
+We can use `inspect` to get a better sense of what is available on a given webpage. What tags can we use to grab the desired information from our wikipedia page? 
+
+--
+
+It looks like we want to grab information from tables with the class "wikitable."
+
+
+---
+# Brief Aside: CSS Selectors
+
+We can parse HTML using **CSS Selectors**, which define patterns for locating HTML elements. 
+
+CSS Selectors are pretty complex, and we're going to keep it light today. If you want to learn more, check out the [CSS Diner](https://flukeout.github.io/). Additionally, if CSS Selectors are giving you tons of trouble, check out [SelectorGadget](https://selectorgadget.com/).
+
+4 selectors to know:
+1. `p` selects all `&lt;p&gt;` elements
+2. `.title` selects all elements with `class` "title"
+3. `p.special` selects all `&lt;p&gt;` elements with `class` "special"
+4. `#title` selects the unique element with id attribute that equals "title"
+
+---
+# Getting Our Tables
+
+We can use the selector `table` to select all `&lt;table&gt;` elements:
+
+
+``` r
+raw_wiki |&gt; html_elements("table")
+```
+
+```
+## {xml_nodeset (15)}
+##  [1] &lt;table class="box-Unreferenced_section plainlinks metadata ambox ambox-c ...
+##  [2] &lt;table class="wikitable"&gt;&lt;tbody&gt;\n&lt;tr&gt;\n&lt;th&gt;Time\n&lt;/th&gt;\n&lt;th&gt;Athlete\n&lt;/ ...
+##  [3] &lt;table class="wikitable" style="text-align: left;"&gt;&lt;tbody&gt;\n&lt;tr&gt;\n&lt;td st ...
+##  [4] &lt;table class="wikitable"&gt;&lt;tbody&gt;\n&lt;tr&gt;\n&lt;th&gt;Time\n&lt;/th&gt;\n&lt;th&gt;Wind\n&lt;/th&gt; ...
+##  [5] &lt;table class="wikitable"&gt;&lt;tbody&gt;\n&lt;tr&gt;\n&lt;th&gt;Time\n&lt;/th&gt;\n&lt;th&gt;Wind\n&lt;/th&gt; ...
+##  [6] &lt;table class="wikitable"&gt;&lt;tbody&gt;\n&lt;tr&gt;\n&lt;th&gt;Time\n&lt;/th&gt;\n&lt;th&gt;Athlete\n&lt;/ ...
+##  [7] &lt;table class="nowraplinks mw-collapsible autocollapse navbox-inner" styl ...
+##  [8] &lt;table class="nowraplinks navbox-subgroup" style="border-spacing:0"&gt;&lt;tbo ...
+##  [9] &lt;table class="nowraplinks hlist mw-collapsible autocollapse navbox-inner ...
+## [10] &lt;table class="nowraplinks navbox-subgroup" style="border-spacing:0"&gt;&lt;tbo ...
+## [11] &lt;table class="nowraplinks navbox-subgroup" style="border-spacing:0"&gt;&lt;tbo ...
+## [12] &lt;table class="nowraplinks mw-collapsible uncollapsed navbox-inner" style ...
+## [13] &lt;table class="nowraplinks navbox-subgroup" style="border-spacing:0"&gt;&lt;tbo ...
+## [14] &lt;table class="nowraplinks navbox-subgroup" style="border-spacing:0"&gt;&lt;tbo ...
+## [15] &lt;table class="nowraplinks navbox-subgroup" style="border-spacing:0"&gt;&lt;tbo ...
+```
+
+--
+
+Alas, so are many other things. 
+
+---
+# Trying again
+
+We want tables with class wikitable: `table.wikitable` should work!
+
+
+``` r
+raw_wiki |&gt; html_elements("table.wikitable")
+```
+
+```
+## {xml_nodeset (5)}
+## [1] &lt;table class="wikitable"&gt;&lt;tbody&gt;\n&lt;tr&gt;\n&lt;th&gt;Time\n&lt;/th&gt;\n&lt;th&gt;Athlete\n&lt;/t ...
+## [2] &lt;table class="wikitable" style="text-align: left;"&gt;&lt;tbody&gt;\n&lt;tr&gt;\n&lt;td sty ...
+## [3] &lt;table class="wikitable"&gt;&lt;tbody&gt;\n&lt;tr&gt;\n&lt;th&gt;Time\n&lt;/th&gt;\n&lt;th&gt;Wind\n&lt;/th&gt;\ ...
+## [4] &lt;table class="wikitable"&gt;&lt;tbody&gt;\n&lt;tr&gt;\n&lt;th&gt;Time\n&lt;/th&gt;\n&lt;th&gt;Wind\n&lt;/th&gt;\ ...
+## [5] &lt;table class="wikitable"&gt;&lt;tbody&gt;\n&lt;tr&gt;\n&lt;th&gt;Time\n&lt;/th&gt;\n&lt;th&gt;Athlete\n&lt;/t ...
+```
+
+Looks better! 
+
+---
+# Accessing the actual info
+
+We still don't have the table info. `html_table()` can help:
+
+
+``` r
+table_dfs &lt;- raw_wiki |&gt; html_elements("table.wikitable") |&gt; 
+  html_table()
+table_dfs[[1]]
+```
+
+```
+## # A tibble: 21 × 5
+##     Time Athlete               Nationality    `Location of races`     Date      
+##    &lt;dbl&gt; &lt;chr&gt;                 &lt;chr&gt;          &lt;chr&gt;                   &lt;chr&gt;     
+##  1  10.8 Luther Cary           United States  Paris, France           July 4, 1…
+##  2  10.8 Cecil Lee             United Kingdom Brussels, Belgium       September…
+##  3  10.8 Étienne De Ré         Belgium        Brussels, Belgium       August 4,…
+##  4  10.8 L. Atcherley          United Kingdom Frankfurt/Main, Germany April 13,…
+##  5  10.8 Harry Beaton          United Kingdom Rotterdam, Netherlands  August 28…
+##  6  10.8 Harald Anderson-Arbin Sweden         Helsingborg, Sweden     August 9,…
+##  7  10.8 Isaac Westergren      Sweden         Gävle, Sweden           September…
+##  8  10.8 Isaac Westergren      Sweden         Gävle, Sweden           September…
+##  9  10.8 Frank Jarvis          United States  Paris, France           July 14, …
+## 10  10.8 Walter Tewksbury      United States  Paris, France           July 14, …
+## # ℹ 11 more rows
+```
+
+...this is crazy! `R` is cool sometimes. 
+
+---
+# General Workflow
+
+Your workflow using `rvest`: get html --&gt; get desired html elements --&gt; break into individual elements --&gt; turn into table/text/numbers/whatever.
+
+Useful commands for getting individual elements: 
+- `html_text2()` gets plain text contents of an HTML element
+- `html_attr()` gets attributes from an HTML element (e.g., links)
+- `html_table()` creates a data.frame from a table in an HTML element
+
+
+---
+# A Little Cleanup
+
+Let's get our data frames in working order here: 
+
+
+``` r
+table_dfs_int &lt;- raw_wiki |&gt; html_elements("table.wikitable") |&gt; 
+  html_table()
+
+table_dfs &lt;- lapply(table_dfs_int[c(1,3,4)], # drop unwanted tables
+                    function(x) x |&gt;
+*                     clean_names() |&gt; ## fix colnames, from the janitor package
+                      mutate(date = mdy(date))) ## from lubridate
+table_dfs[[1]]
+```
+
+```
+## # A tibble: 21 × 5
+##     time athlete               nationality    location_of_races       date      
+##    &lt;dbl&gt; &lt;chr&gt;                 &lt;chr&gt;          &lt;chr&gt;                   &lt;date&gt;    
+##  1  10.8 Luther Cary           United States  Paris, France           1891-07-04
+##  2  10.8 Cecil Lee             United Kingdom Brussels, Belgium       1892-09-25
+##  3  10.8 Étienne De Ré         Belgium        Brussels, Belgium       1893-08-04
+##  4  10.8 L. Atcherley          United Kingdom Frankfurt/Main, Germany 1895-04-13
+##  5  10.8 Harry Beaton          United Kingdom Rotterdam, Netherlands  1895-08-28
+##  6  10.8 Harald Anderson-Arbin Sweden         Helsingborg, Sweden     1896-08-09
+##  7  10.8 Isaac Westergren      Sweden         Gävle, Sweden           1898-09-11
+##  8  10.8 Isaac Westergren      Sweden         Gävle, Sweden           1899-09-10
+##  9  10.8 Frank Jarvis          United States  Paris, France           1900-07-14
+## 10  10.8 Walter Tewksbury      United States  Paris, France           1900-07-14
+## # ℹ 11 more rows
+```
+
+Let's combine our data frames into one and graph the results. 
+
+---
+# Combined Data
+
+
+``` r
+wr100 &lt;- rbind(
+  table_dfs[[1]] |&gt; select(time, athlete, nationality, date) |&gt; 
+    mutate(era="Pre-IAAF"),
+  table_dfs[[2]] |&gt; select(time, athlete, nationality, date) |&gt; 
+    mutate(era="Pre-automatic"),
+  table_dfs[[3]] |&gt; select(time, athlete, nationality, date) |&gt; 
+    mutate(era="Modern")
+)
+head(wr100)
+```
+
+```
+## # A tibble: 6 × 5
+##    time athlete               nationality    date       era     
+##   &lt;dbl&gt; &lt;chr&gt;                 &lt;chr&gt;          &lt;date&gt;     &lt;chr&gt;   
+## 1  10.8 Luther Cary           United States  1891-07-04 Pre-IAAF
+## 2  10.8 Cecil Lee             United Kingdom 1892-09-25 Pre-IAAF
+## 3  10.8 Étienne De Ré         Belgium        1893-08-04 Pre-IAAF
+## 4  10.8 L. Atcherley          United Kingdom 1895-04-13 Pre-IAAF
+## 5  10.8 Harry Beaton          United Kingdom 1895-08-28 Pre-IAAF
+## 6  10.8 Harald Anderson-Arbin Sweden         1896-08-09 Pre-IAAF
+```
+
+---
+# Dot Plot
+
+&lt;img src="11-webscraping-css_files/figure-html/unnamed-chunk-8-1.png" style="display: block; margin: auto;" /&gt;
+
+That was easy. How about something harder. 
+
+---
+# Craigslist  - Watch Prices
+
+Let's take a look at watch prices on [Craigslist in Raleigh](https://raleigh.craigslist.org/search/jwa?query=watch#search=1~gallery~0~0).
+
+We want to know: listing names, prices, locations, and links for the Raleigh craigslist. 
+
+Use the shell code below to poke around and see if you can download the information we want.
+
+
+``` r
+# read in html, get listing info
+web &lt;- "https://raleigh.craigslist.org/search/jwa?query=watch#search=1~gallery~0~0"
+craigslist_listings &lt;- read_html(web)|&gt;
+  html_elements("[INSERT ELEMENTS TO GET CODE HERE]") 
+craigslist_listings[[1]]
+```
+
+(Remember our basic strategy: `read_html` --&gt; `html_elements` --&gt; `html_element` --&gt; `html_text2`. We're covering steps 1 and 2 here, don't worry about having your output look perfect.)
+
+---
+# My Solution
+
+(Admittedly, it took a while for me to figure this out. Art, not science.)
+
+All kinds of info is saved in `li a`!
+
+We can use `html_elements()` to find an element that corresponds to each listing, then use `html_element()` to extract each individual variable:
+
+
+``` r
+# read in html, get listing info
+web &lt;- "https://raleigh.craigslist.org/search/jwa?query=watch#search=1~gallery~0~0"
+craigslist_listings &lt;- read_html(web) |&gt; html_elements("li a") 
+craigslist_listings[[1]]
+```
+
+```
+## {html_node}
+## &lt;a href="https://raleigh.craigslist.org/jwl/d/raleigh-vintage-hamilton-mens-automatic/7796077161.html"&gt;
+## [1] &lt;div class="title"&gt;Vintage Hamilton Men's Automatic Watch&lt;/div&gt;
+## [2] &lt;div class="details"&gt;\n                    &lt;div class="price"&gt;$100&lt;/div&gt;\ ...
+```
+
+Looks promising!
+
+---
+# Diving Deeper
+
+
+``` r
+# follow branching tree further:
+# title of listing
+title &lt;- craigslist_listings |&gt; html_elements("div.title") |&gt; html_text2()
+
+# seems like 2 pieces of info stored in div.details
+details &lt;- craigslist_listings |&gt; html_elements("div.details")
+price &lt;- details |&gt; html_element("div.price") |&gt; html_text2()
+location &lt;- details |&gt; html_element("div.location") |&gt; html_text2()
+
+# we can use html_attr to grab the link to the listing
+link &lt;- craigslist_listings |&gt; html_attr("href")
+```
+
+---
+# Taking a Look at Our Data
+
+
+``` r
+title[1]
+```
+
+```
+## [1] "Vintage Hamilton Men's Automatic Watch"
+```
+
+``` r
+price[1]
+```
+
+```
+## [1] "$100"
+```
+
+``` r
+location[1]
+```
+
+```
+## [1] "Stonehenge, Raleigh NC"
+```
+
+``` r
+link[1]
+```
+
+```
+## [1] "https://raleigh.craigslist.org/jwl/d/raleigh-vintage-hamilton-mens-automatic/7796077161.html"
+```
+
+Looking *really* good
+
+---
+# Stick them in a data frame, clean up
+
+
+``` r
+watch_data &lt;- data.frame(title,price,location,link) |&gt; 
+  mutate(price = parse_number(price), # get rid of $s
+         clean_location = case_when(
+           grepl("durham",location, ignore.case=TRUE) ~ "Durham",
+           grepl("cary|apex",location, ignore.case=TRUE) ~ "Cary",
+           grepl("raleigh",location, ignore.case=TRUE) ~ "Raleigh",
+           grepl("chapel hill",location, ignore.case=TRUE) ~ "Chapel Hill",
+           grepl("wake forest",location, ignore.case=TRUE) ~ "Wake Forest",
+           .default = "Other"
+         )) |&gt; 
+  filter(price&gt;0)
+```
+
+How about another plot? 
+
+---
+# Plot
+
+&lt;img src="11-webscraping-css_files/figure-html/unnamed-chunk-14-1.png" style="display: block; margin: auto;" /&gt;
+
+---
+# Plot (for students)
+
+&lt;img src="11-webscraping-css_files/figure-html/unnamed-chunk-15-1.png" style="display: block; margin: auto;" /&gt;
+
+Sidenote: Wake Forest is gone! 
+
+---
+# Summary
+
+There's two ways to get data from the internet: server-side and client-side
+
+We covered the server-side stuff today
+
+To do so, we did some mucking around with CSS selectors
+
+It is an art, not a science. 
+
+---
+# Another Tool
+
+Our approach worked pretty well for Craigslist, but we also got fairly lucky: there was only one page of search results when I wrote these notes. 
+
+It turns out you can use R to drive your actual computer, clicking on buttons (like Next Page) and so on. 
+
+You can do this using [RSelenium](https://cran.r-project.org/web/packages/RSelenium/index.html), which is a huge pain but sometimes incredibly cool.
+
+---
+# Next Class
+
+We'll be downloading macroeconomic data from [FRED](https://fred.stlouisfed.org/)
+
+Before class ***please*** make an account with FRED [https://fredaccount.stlouisfed.org/login/secure/](https://fredaccount.stlouisfed.org/login/secure/)
+
+and obtain an API key [https://fredaccount.stlouisfed.org/apikey](https://fredaccount.stlouisfed.org/apikey)!!!
+
+PS: your api key is a secret, don't share it with people
+
+---
+class: inverse, center, middle
+
+# Next lecture: Scraping Client-Side with APIs
+&lt;html&gt;&lt;div style='float:left'&gt;&lt;/div&gt;&lt;hr color='#EB811B' size=1px width=796px&gt;&lt;/html&gt;
+
+
+    </textarea>
+<style data-target="print-only">@media screen {.remark-slide-container{display:block;}.remark-slide-scaler{box-shadow:none;}}</style>
+<script src="https://remarkjs.com/downloads/remark-latest.min.js"></script>
+<script src="libs/cols_macro.js"></script>
+<script>var slideshow = remark.create({
+"highlightStyle": "github",
+"highlightLines": true,
+"highlightSpans": false,
+"countIncrementalSlides": false
+});
+if (window.HTMLWidgets) slideshow.on('afterShowSlide', function (slide) {
+  window.dispatchEvent(new Event('resize'));
+});
+(function(d) {
+  var s = d.createElement("style"), r = d.querySelector(".remark-slide-scaler");
+  if (!r) return;
+  s.type = "text/css"; s.innerHTML = "@page {size: " + r.style.width + " " + r.style.height +"; }";
+  d.head.appendChild(s);
+})(document);
+
+(function(d) {
+  var el = d.getElementsByClassName("remark-slides-area");
+  if (!el) return;
+  var slide, slides = slideshow.getSlides(), els = el[0].children;
+  for (var i = 1; i < slides.length; i++) {
+    slide = slides[i];
+    if (slide.properties.continued === "true" || slide.properties.count === "false") {
+      els[i - 1].className += ' has-continuation';
+    }
+  }
+  var s = d.createElement("style");
+  s.type = "text/css"; s.innerHTML = "@media print { .has-continuation { display: none; } }";
+  d.head.appendChild(s);
+})(document);
+// delete the temporary CSS (for displaying all slides initially) when the user
+// starts to view slides
+(function() {
+  var deleted = false;
+  slideshow.on('beforeShowSlide', function(slide) {
+    if (deleted) return;
+    var sheets = document.styleSheets, node;
+    for (var i = 0; i < sheets.length; i++) {
+      node = sheets[i].ownerNode;
+      if (node.dataset["target"] !== "print-only") continue;
+      node.parentNode.removeChild(node);
+    }
+    deleted = true;
+  });
+})();
+// add `data-at-shortcutkeys` attribute to <body> to resolve conflicts with JAWS
+// screen reader (see PR #262)
+(function(d) {
+  let res = {};
+  d.querySelectorAll('.remark-help-content table tr').forEach(tr => {
+    const t = tr.querySelector('td:nth-child(2)').innerText;
+    tr.querySelectorAll('td:first-child .key').forEach(key => {
+      const k = key.innerText;
+      if (/^[a-z]$/.test(k)) res[k] = t;  // must be a single letter (key)
+    });
+  });
+  d.body.setAttribute('data-at-shortcutkeys', JSON.stringify(res));
+})(document);
+(function() {
+  "use strict"
+  // Replace <script> tags in slides area to make them executable
+  var scripts = document.querySelectorAll(
+    '.remark-slides-area .remark-slide-container script'
+  );
+  if (!scripts.length) return;
+  for (var i = 0; i < scripts.length; i++) {
+    var s = document.createElement('script');
+    var code = document.createTextNode(scripts[i].textContent);
+    s.appendChild(code);
+    var scriptAttrs = scripts[i].attributes;
+    for (var j = 0; j < scriptAttrs.length; j++) {
+      s.setAttribute(scriptAttrs[j].name, scriptAttrs[j].value);
+    }
+    scripts[i].parentElement.replaceChild(s, scripts[i]);
+  }
+})();
+(function() {
+  var links = document.getElementsByTagName('a');
+  for (var i = 0; i < links.length; i++) {
+    if (/^(https?:)?\/\//.test(links[i].getAttribute('href'))) {
+      links[i].target = '_blank';
+    }
+  }
+})();
+// adds .remark-code-has-line-highlighted class to <pre> parent elements
+// of code chunks containing highlighted lines with class .remark-code-line-highlighted
+(function(d) {
+  const hlines = d.querySelectorAll('.remark-code-line-highlighted');
+  const preParents = [];
+  const findPreParent = function(line, p = 0) {
+    if (p > 1) return null; // traverse up no further than grandparent
+    const el = line.parentElement;
+    return el.tagName === "PRE" ? el : findPreParent(el, ++p);
+  };
+
+  for (let line of hlines) {
+    let pre = findPreParent(line);
+    if (pre && !preParents.includes(pre)) preParents.push(pre);
+  }
+  preParents.forEach(p => p.classList.add("remark-code-has-line-highlighted"));
+})(document);</script>
+
+<script>
+slideshow._releaseMath = function(el) {
+  var i, text, code, codes = el.getElementsByTagName('code');
+  for (i = 0; i < codes.length;) {
+    code = codes[i];
+    if (code.parentNode.tagName !== 'PRE' && code.childElementCount === 0) {
+      text = code.textContent;
+      if (/^\\\((.|\s)+\\\)$/.test(text) || /^\\\[(.|\s)+\\\]$/.test(text) ||
+          /^\$\$(.|\s)+\$\$$/.test(text) ||
+          /^\\begin\{([^}]+)\}(.|\s)+\\end\{[^}]+\}$/.test(text)) {
+        code.outerHTML = code.innerHTML;  // remove <code></code>
+        continue;
+      }
+    }
+    i++;
+  }
+};
+slideshow._releaseMath(document);
+</script>
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+(function () {
+  var script = document.createElement('script');
+  script.type = 'text/javascript';
+  script.src  = 'https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-MML-AM_CHTML';
+  if (location.protocol !== 'file:' && /^https?:/.test(script.src))
+    script.src  = script.src.replace(/^https?:/, '');
+  document.getElementsByTagName('head')[0].appendChild(script);
+})();
+</script>
+  </body>
+</html>
