@@ -1,0 +1,425 @@
+---
+title: "Data Science for Economists"
+# subtitle: "<html><div style='float:left'></div><hr color='#EB811B' size=1px width=796px></html>"
+subtitle: "Lecture 12: Webscraping part 2 - APIs"
+author: "Drew Van Kuiken"
+date: "University of North Carolina | [ECON 370](https://github.com/drewvankuiken/ECON370)" #"`r format(Sys.time(), '%d %B %Y')`"
+output:
+  xaringan::moon_reader:
+    css: [default, metropolis, metropolis-fonts, "libs/cols.css"] 
+    lib_dir: libs
+    nature:
+      beforeInit: "libs/cols_macro.js"
+      highlightStyle: github
+      highlightLines: true
+      highlightSpans: false
+      countIncrementalSlides: false
+---
+
+```{r setup, include=FALSE}
+options(htmltools.dir.version = FALSE)
+library(knitr)
+library(fontawesome)
+opts_chunk$set(
+  fig.align="center", fig.width=6, fig.height=3.5, 
+  # out.width="748px", #out.length="520.75px",
+  dpi=300, #fig.path='Figs/',
+  cache=T#, echo=F, warning=F, message=F
+  )
+```
+
+# The Internet as Data
+
+Let's get it onto our computers. 
+
+--
+
+Same packages as lecture 11 (listed below) plus **httr**, **listviewer**, **usethis**, and **fredr**. **jsonlite** can make reading json data easier.
+
+```{r}
+## Load and install the packages that we'll be using today
+if (!require("pacman")) install.packages("pacman")
+pacman::p_load(tidyverse, httr, lubridate, hrbrthemes, janitor, jsonlite, fredr, 
+               listviewer, usethis)
+## My preferred ggplot2 plotting theme (optional)
+theme_set(hrbrthemes::theme_ipsum())
+```
+
+Much credit to Grant McDermott for the content on these slides.
+
+---
+# Internet as Data part 2
+
+1. Server-side
+  - Data stored at the server, which sends HTML code with data in it to us
+  - **Our process**: trudging through CSS selectors
+2. Client-side
+  - Our browser requests data from the server, server sends specific info we asked for
+  - **Our process**: pinging an API endpoint
+  
+Today: client-side. Easier! 
+
+---
+# Overview: APIs
+
+An Application Programming Interface (API) is a way for website to share data. 
+- Connects your computer (**client**) to the website (**server**) 
+  - "Alexa, what's the weather today?"
+- Communication done via HTTP *request* (and *response*)
+   - We'll be using **GET requests** today
+   - Responses include status codes (200: request OK, 400: didn't work) and, if relevant, data
+- Authentication done via **API key** or username/password - proves identity<sup>1</sup>
+
+.footnote[<sup>1</sup> OAuth is another option. Basically when you use Google account to log in to a website.]
+
+---
+# Why Use an API?
+
+.pull_left[
+[BEA Interactive Data Viewer](https://apps.bea.gov/itable/?ReqID=70&step=1&_gl=1*1ds2qrh*_ga*MTM4MzMzMzI2OS4xNzI5ODA3MTE2*_ga_J4698JNNFT*MTczMDU3NTA4Ni40LjEuMTczMDU3NTEyMy4yMy4wLjA.#eyJhcHBpZCI6NzAsInN0ZXBzIjpbMSwyOSwyNSwzMSwyNiwyNywzMF0sImRhdGEiOltbIlRhYmxlSWQiLCIyMCJdLFsiTWFqb3JfQXJlYSIsIjUiXSxbIlN0YXRlIixbIjUiXV0sWyJBcmVhIixbIlhYIl1dLFsiU3RhdGlzdGljIixbIi0xIl1dLFsiVW5pdF9vZl9tZWFzdXJlIiwiTGV2ZWxzIl0sWyJZZWFyIixbIi0xIl1dLFsiWWVhckJlZ2luIiwiLTEiXSxbIlllYXJfRW5kIiwiLTEiXV19)
+$\Rightarrow$
+]
+
+.pull_right[
+```{r, cache=FALSE,echo=FALSE,out.width="50%",fig.show='hold',fig.align='right'}
+knitr::include_graphics(c("pics/python.png"))
+```
+]
+
+---
+# Overview: JSON
+
+Most modern APIs will return data in a format known as JSON. You've maybe seen some JSON formatted data on the web. 
+
+```{r, cache=FALSE,echo=FALSE,out.width="80%",fig.show='hold',fig.align='center'}
+knitr::include_graphics(c("pics/json.png"))
+```
+
+---
+# Overview: JSON
+
+JSON data is usually more complicated:  
+
+```{r, cache=FALSE,echo=FALSE,out.width="80%",fig.show='hold',fig.align='center'}
+knitr::include_graphics(c("pics/json2.png"))
+```
+
+It can also be nested. 
+
+--
+<br>
+
+Luckily, `R` can parse JSON data for us. 
+
+---
+# Our Process
+
+Retrieving data from APIs is a little simpler than scraping it. 
+
+Our general process:
+- get an API key
+- locate the endpoint we're interested in
+- submit a **request**
+- make sure our request worked
+
+---
+# Trees of NYC
+
+Go to [NYC Open Data - Tree Census](https://data.cityofnewyork.us/Environment/2015-Street-Tree-Census-Tree-Data/uvpi-gqnh/about_data)
+
+Navigate: Actions $\Rightarrow$ API $\Rightarrow$ Copy API Endpoint link $\Rightarrow$ Follow link
+
+--
+
+```{r}
+#library(jsonlite)
+
+nyc_trees = fromJSON("https://data.cityofnewyork.us/resource/uvpi-gqnh.json") |> 
+  as_tibble()
+head(nyc_trees)
+```
+
+Note: `fromJSON` automatically converts the JSON data into a data.frame.
+
+---
+# Did It Work? 
+
+```{r,echo=FALSE}
+nyc_trees |>
+  select(longitude, latitude, stump_diam, spc_common, spc_latin, tree_id) %>% 
+  mutate_at(vars(longitude:stump_diam), as.numeric) %>% 
+  ggplot(aes(x=longitude, y=latitude, size=stump_diam)) + 
+  geom_point(alpha=0.5) +
+  scale_size_continuous(name = "Stump diameter") +
+  labs(
+    x = "Longitude", y = "Latitude",
+    title = "Sample of New York City trees",
+    caption = "Source: NYC Open Data"
+    )
+```
+
+Sorta looks like NYC. I can see Staten Island at least
+
+---
+# Summary
+
+Our process here was dead simple. Note how easy it was to request data from the server: all we had to do was navigate to the API endpoint (i.e., the url that contained the data in JSON format) and `R` did the rest for us. Next time, requests will be a little more involved.
+
+---
+# Application 2: FRED
+
+Did you register to get an API key? Here's the [FRED API](https://fred.stlouisfed.org/docs/api/fred/)
+
+<iframe src="https://fred.stlouisfed.org/graph/graph-landing.php?g=1ydve&width=600&height=300" scrolling="no" frameborder="0" style="overflow:hidden; width:600px; height:300px;" allowTransparency="true" loading="lazy"></iframe>
+
+Does it feel like you have a seatmate more frequently these days? 
+--
+<br>
+
+Let's make this graph ourselves. 
+
+---
+# Using the API
+
+Look through the [API Docs](https://fred.stlouisfed.org/docs/api/fred/). Which endpoint are we interested in? 
+
+--
+
+We want the underlying data in **series/observations**. Which parameters do we need to submit with our query? 
+
+--
+
+2 of them: 
+- api_key: YOUR_API_KEY
+- series_id: "LOADFACTORDD11"
+
+Let's also ask for "json" as a file type though because it's easier to work with. 
+
+---
+# Preparing a request
+
+The parameters of a GET request are analogous to arguments for an `R` function. Instead of calling specific functions, we add options to the URL we're trying to query. Options come after the `?` in the API's endpoint.
+
+What should our JSON GET request look like? (Look at the documentation!)
+
+--
+
+<br>
+
+https://api.stlouisfed.org/fred/series/observations?series_id=LOADFACTORDD11&api_key=YOUR_API_KEY&file_type=json
+
+--
+
+To submit this request, we could use `readJSON` like we did before. Instead, we're going to use the `httr` package, which has a bunch of utilities for submitting API requests specifically. 
+
+---
+# Preparing a request
+
+Lets store our parameters in a list for convenience:
+```{r}
+endpoint = "series/observations"
+params = list(
+  api_key=Sys.getenv("FRED_API_KEY"), # change to your own key
+  file_type="json",
+  series_id="LOADFACTORDD11"
+)
+```
+
+and use `httr::GET()` to make our request:
+```{r}
+fred = GET(
+  url = "https://api.stlouisfed.org/",
+  path = paste0("fred/",endpoint),
+  query = params
+)
+```
+
+---
+# Rejection
+
+Imagine we misspelled our series_id. What does the fred function return? 
+
+--
+
+```{r}
+params2 = list(
+  api_key=Sys.getenv("FRED_API_KEY"), # change to your own key
+  file_type="json",
+  series_id="LOADFACTERDD11"
+)
+fred2 = GET(
+  url = "https://api.stlouisfed.org/",
+  path = paste0("fred/",endpoint),
+  query = params2
+)
+```
+
+---
+# Back to our correct request
+
+How can we extract the data from our fred object? `content()` from `httr`!
+
+```{r}
+fred_content <- fred |> 
+  content("text") |>  # text turns everything into a character vector
+  fromJSON()
+```
+
+This gives us a nice list, with a bunch of different descriptions that come from the API documentation. For example: what is "lin"? 
+How can we extract a data frame with load factors over time from here?
+
+---
+# Getting a data.frame
+
+```{r}
+fred_obs <- fred_content[[length(fred_content)]] |>  # could also use pluck() from dplyr
+  mutate(across(realtime_start:date,ymd),
+         value=as.numeric(value))
+head(fred_obs)
+```
+
+What's happening in each of these steps? 
+
+---
+# Another plot
+
+```{r, echo=FALSE}
+fred_obs |>
+  ggplot(aes(date, value)) +
+  geom_line() +
+  scale_y_continuous(labels = scales::comma) +
+  labs(
+    x="Date", y="Load Factor (%)",
+    title="Airline Load Factors Over Time", caption="Source: FRED"
+    )
+```
+Very cool. 
+
+---
+# More on APIs
+
+So far we've worked with external APIs. Company has data, wants to share it. 
+
+APIs are also used for internal company operations. If the machine learning team at Google wants to use data from the search team, the search team sets up an API. 
+
+Think about websites that dynamically update based on some parameters. Guess what's happening underneath the hood (sometimes): a bunch of API calls!
+
+```{r, cache=FALSE,echo=FALSE,out.width="70%",fig.show='hold',fig.align='center'}
+knitr::include_graphics(c("pics/airbnb.png"))
+```
+
+---
+# Application 3: Secret APIs
+
+On occasion, we can actually access the underlying APIs that generate this data.<sup>1</sup>
+
+The first example of this (that I found on the internet) was someone using hidden APIs to collect data from... Airbnb!
+
+In the years since, various blog posts about scraping secret APIs have come out, and various websites have made it impossible to scrape those secret APIs. Nevertheless, I think it's a valuable teaching tool to explore some of this. And I'm not profiting off this lesson.
+
+.footnote[<sup>1</sup> Caveat about legality/morality of this!]
+
+---
+# Google Fiber Rollout 
+
+[Google Fiber](https://fiber.google.com/) is a new Internet Service Provider, run by Google, that is expanding across the country. It's fiber internet - Google's putting fiber-optic cables in the ground all over the country. When you connect to the internet using these cables, speeds (generally) go way up. 
+
+(One hedge fund spent $300mil to put a fiber cable in between Chicago and NYC!)
+
+--
+<br>
+
+Fiber is coming to the Triangle!... slowly. 
+
+```{r, cache=FALSE,echo=FALSE,out.width="50%",fig.show='hold',fig.align='center'}
+knitr::include_graphics(c("pics/fiber_email.png"))
+```
+
+---
+# Checking In
+
+Helpfully, Google has designed a [website](https://fiber.google.com/cities/triangle/apartments/) that lets us check how the rollout of fiber is going in the Triangle
+
+--
+<br>
+
+Not much progress in Chapel Hill. But - kind of a cool website right? At least: very cool data. 
+
+---
+# Finding Secret APIs
+
+Notice that as we pan around the map, different dots seem to pop up. Let's check if there's a secret API for us to access. 
+
+A couple steps to look around for APIs:
+1. Open `inspect`
+2. Disable cache (checkbox somewhere)
+3. Go to `Network`, mouse over to the suboption `XHR`
+4. Click around on the various requests that pop up. When you click on a request, look at the "Response" tab that appears
+5. Occasionally, you'll get a response that looks a lot like json data. 
+6. Right click on the json request, copy the path to the json as a URL, and navigate to the website. You should get a tab that looks like json data! 
+
+---
+# My Process
+
+When I clicked around, I found the following URL worked pretty well for me. Be forewarned: it downloads the JSON to your computer, so don't put it in your browser if you don't want to download anything. 
+
+```{r}
+fiber = GET(
+  url = "https://www.googleapis.com/download/storage/v1/b/fiber/o/property-manager%2FRDU1.json?alt=media&apiKey=AIzaSyAeJhAYmfDCntb8-rVn6x9TyRgL6-IkPQw"
+)
+
+fiber_content <- fiber |> 
+  content("text") |>  # text turns everything into a character vector
+  fromJSON()
+head(fiber_content)
+```
+
+---
+# This Is... Cool
+
+229 apartment buildings, not all of which have fiber! Let's stick it on another graph. 
+
+Note: this could be the start of a sorta cool research project - what drives fiber adoption? Apartment building size, or location, or fanciness? Does Spectrum cable lower prices when Fiber enters, or if Fiber is about to enter? I don't know! You could grab this data across the country though.
+
+---
+# Fiber Rollout
+
+```{r,echo=FALSE}
+fiber_content |>
+  select(Longitude, Latitude, Ready) |> 
+  ggplot(aes(x=Longitude, y=Latitude, col=as.factor(Ready))) + 
+  geom_point(alpha=0.5) +
+  scale_color_discrete(name = "Fiber Rollout Status",
+                       labels = c("Unavailable","Available")) +
+  labs(
+    x = "Longitude", y = "Latitude",
+    title = "Google Fiber Rollout",
+    caption = "Source: Google"
+    )
+```
+
+Honestly: not very helpful. Needs a map background! Next class...
+
+---
+# Summary
+
+We learned how to use APIs, which take information from server and deliver it to the client (us). 
+
+Our general process:
+- get an API key
+- locate the endpoint we're interested in
+- submit a **request**
+- make sure our request worked
+
+For dynamically updating websites, sometimes we can find a secret API.
+
+---
+class: inverse, center, middle
+
+# Next lecture: More on Plots
+<html><div style='float:left'></div><hr color='#EB811B' size=1px width=796px></html>
+
+```{r gen_pdf, include = FALSE, cache = FALSE, eval = TRUE}
+infile = list.files(pattern = '.html')
+#pagedown::chrome_print(input = infile, timeout = 100)
+```
