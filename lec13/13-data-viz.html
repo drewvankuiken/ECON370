@@ -1,0 +1,813 @@
+<!DOCTYPE html>
+<html lang="" xml:lang="">
+  <head>
+    <title>Data Science for Economists</title>
+    <meta charset="utf-8" />
+    <meta name="author" content="Drew Van Kuiken" />
+    <script src="libs/header-attrs/header-attrs.js"></script>
+    <link href="libs/remark-css/default.css" rel="stylesheet" />
+    <link href="libs/remark-css/metropolis.css" rel="stylesheet" />
+    <link href="libs/remark-css/metropolis-fonts.css" rel="stylesheet" />
+  </head>
+  <body>
+    <textarea id="source">
+class: center, middle, inverse, title-slide
+
+.title[
+# Data Science for Economists
+]
+.subtitle[
+## Lecture 13: Data Visualization - part 1
+]
+.author[
+### Drew Van Kuiken
+]
+.date[
+### University of North Carolina | <a href="https://github.com/drewvankuiken/ECON370">ECON 370</a>
+]
+
+---
+
+
+
+
+
+
+
+
+# Table of contents
+
+1. [Introduction](#intro)
+
+2. [Base Plots](#base)
+
+3. [ggplot2](#ggplot)
+
+<svg aria-hidden="true" role="img" viewBox="0 0 512 512" style="height:1em;width:1em;vertical-align:-0.125em;margin-left:auto;margin-right:auto;font-size:inherit;fill:currentColor;overflow:visible;position:relative;"><path d="M208 32c0-17.7 14.3-32 32-32h32c17.7 0 32 14.3 32 32V172.9l122-70.4c15.3-8.8 34.9-3.6 43.7 11.7l16 27.7c8.8 15.3 3.6 34.9-11.7 43.7L352 256l122 70.4c15.3 8.8 20.5 28.4 11.7 43.7l-16 27.7c-8.8 15.3-28.4 20.6-43.7 11.7L304 339.1V480c0 17.7-14.3 32-32 32H240c-17.7 0-32-14.3-32-32V339.1L86 409.6c-15.3 8.8-34.9 3.6-43.7-11.7l-16-27.7c-8.8-15.3-3.6-34.9 11.7-43.7L160 256 38 185.6c-15.3-8.8-20.5-28.4-11.7-43.7l16-27.7C51.1 98.8 70.7 93.6 86 102.4l122 70.4V32z"/></svg> Slides adapted from Grant McDermott's EC 607 at University of Oregon.
+
+
+---
+class: inverse, center, middle
+name: intro
+
+# Introduction
+
+&lt;html&gt;&lt;div style='float:left'&gt;&lt;/div&gt;&lt;hr color='#EB811B' size=1px width=796px&gt;&lt;/html&gt;
+
+---
+# Motivation
+
+Visualizing data is one of the most powerful tools a data scientist can have. 
+
+R has a lot of very powerful data visualizing abilities which sets it apart from Python.
+
+While base R plots are nice, ggplot2 is where visualizations in R really shine. 
+
+The goal of this lecture is to give y'all the basics of ggplot2 so that you can start making beautiful visualizations on your own.
+
+---
+class: inverse, center, middle
+name: base
+
+# Base R Plots
+
+&lt;html&gt;&lt;div style='float:left'&gt;&lt;/div&gt;&lt;hr color='#EB811B' size=1px width=796px&gt;&lt;/html&gt;
+
+---
+# Base R Plots
+
+We will not be spending much time with plots in base R, but it is worth covering the basics.
+
+The two functions that will be the most useful are `plot()` and `hist()`.
+
+While base R plots are rather easy to create, a lot of work is needed to make them look really nice. 
+
+Basically everything has to be specified manually.
+
+The idea is you make a base plot and then other things have to be added to it later.
+
+
+``` r
+par(mar = c(4, 4, 1, .1)) 
+data(mpg)
+xlab       = "Engine Size"
+ylab       = "Highway MPG"
+plot_title = "Highway MPG by Engine Size"
+```
+---
+# Base R Plots
+
+
+``` r
+plot(y = mpg$hwy,x=mpg$displ,main=plot_title,xlab=xlab,ylab=ylab)
+```
+
+&lt;img src="13-data-viz_files/figure-html/unnamed-chunk-2-1.png" style="display: block; margin: auto;" /&gt;
+
+---
+# Base R Plots
+
+
+``` r
+plot(y = mpg$hwy,x=mpg$displ,main=plot_title,xlab=xlab,ylab=ylab,
+     col="red",pch = 20)
+```
+
+&lt;img src="13-data-viz_files/figure-html/unnamed-chunk-3-1.png" style="display: block; margin: auto;" /&gt;
+
+---
+# Base R Plot
+
+Let's add a line of best fit.
+
+You can do this by regressing hwy on displ and then getting the fitted (predicted) values and then adding a line to base plot.
+
+
+``` r
+plot_mod = lm(hwy ~ displ, data=mpg)
+y_hat    = predict(plot_mod)
+```
+
+---
+# Base R Plots
+
+
+``` r
+plot(y = mpg$hwy,x=mpg$displ,main=plot_title,xlab=xlab,ylab=ylab,
+     col="red",pch = 20)
+lines(y=y_hat,x=mpg$displ)
+```
+
+&lt;img src="13-data-viz_files/figure-html/unnamed-chunk-5-1.png" style="display: block; margin: auto;" /&gt;
+
+---
+# Base R Plots
+
+Histograms are relatively easy: just pass whatever data you want a histogram of into `hist()`
+
+
+``` r
+hist(mpg$hwy)
+```
+
+&lt;img src="13-data-viz_files/figure-html/unnamed-chunk-6-1.png" style="display: block; margin: auto;" /&gt;
+---
+# Base R Plots
+
+We could spend a long time just with base R plots. However, my goal for this lecture is just to give you the basics to make them on your own.
+
+[See this cheatsheet for more.](http://publish.illinois.edu/johnrgallagher/files/2015/10/BaseGraphicsCheatsheet.pdf)
+
+There are much better packages for making beautiful plots in R without much effort. Which leads us to...
+
+---
+class: inverse, center, middle
+name: ggplot
+
+# ggplot2
+
+&lt;html&gt;&lt;div style='float:left'&gt;&lt;/div&gt;&lt;hr color='#EB811B' size=1px width=796px&gt;&lt;/html&gt;
+
+---
+# ggplot2
+
+gglot2 is one of the best packages in R. 
+
+Technically, it is a part of the tidyverse, but I actually didn't know that until recently.
+
+In fact, Python has it's own version of ggplot2 that is significantly more limited than what the R version can do.
+
+While ggplot2 can be a little difficult to understand at first, once you get the hang of it, it's very straight forward and very powerful.
+
+---
+# Elements of ggplot2
+  
+[Hadley Wickham's](http://hadley.nz/) ggplot2 is one of the most popular packages in the entire R canon. 
+- It also happens to be built upon some deep visualization theory: i.e. Leland Wilkinson's [*The Grammar of Graphics*](https://www.amazon.com/Grammar-Graphics-Statistics-Computing/dp/0387245448).
+   
+There's a lot to say about ggplot2's implementation of this "grammar of graphics" approach, but the three key elements are:
+     
+1. Your plot ("the visualization") is linked to your variables ("the data") through various **aesthetic mappings**.
+   
+2. Once the aesthetic mappings are defined, you can represent your data in different ways by choosing different **geoms** (i.e. "geometric objects" like points, lines or bars).
+   
+3. You build your plot in **layers**.
+   
+--
+     
+&lt;/br&gt;
+     
+That's kind of abstract. Let's review each element in turn with some actual plots.
+
+---
+# 1. Aesthetic mappings
+     
+
+``` r
+library(gapminder)
+ggplot(data = gapminder, mapping = aes(x = gdpPercap, y = lifeExp)) + 
+     geom_point()
+```
+
+&lt;img src="13-data-viz_files/figure-html/aesthetics0-1.png" style="display: block; margin: auto;" /&gt;
+
+---
+# 1. Aesthetic mappings (cont.)
+     
+
+``` r
+   ggplot(data = gapminder, mapping = aes(x = gdpPercap, y = lifeExp)) + 
+     geom_point()
+```
+   
+Focus on the top line, which contains the initialising `ggplot()` function call. This function accepts various arguments, including:
+- Where the data come from (i.e. `data = gapminder`).
+- What the aesthetic mappings are (i.e. `mapping = aes(x = gdpPercap, y = lifeExp)`).
+   
+--
+     
+The aesthetic mappings here are pretty simple: They just define an x-axis (GDP per capita) and a y-axis (life expecancy).
+- To get a sense of the power and flexibility that comes with this approach, however, consider what happens if we add more aesthetics to the plot call...
+   
+---
+# 1. Aesthetic mappings (cont.)
+     
+
+``` r
+   ggplot(data = gapminder, aes(x = gdpPercap, y = lifeExp, col = continent)) + 
+     geom_point(alpha = 0.3) ## "alpha" controls transparency. Takes a value between 0 and 1.
+```
+
+&lt;img src="13-data-viz_files/figure-html/aesthetics2-1.svg" style="display: block; margin: auto;" /&gt;
+   
+--
+     
+Note that I've dropped the "mapping =" part of the ggplot call. Most people just start with "aes(...)", since `ggplot2` knows the order of the arguments.
+   
+---
+# 1. Aesthetic mappings (cont.)
+
+We colored the dots based on continents. What if we wanted to make the points based on population size?
+
+--
+  
+
+``` r
+ggplot(data = gapminder, aes(x = gdpPercap, y = lifeExp, size=pop, col = continent)) + 
+     geom_point(alpha = 0.3) ## "alpha" controls transparency. Takes a value between 0 and 1.
+```
+
+&lt;img src="13-data-viz_files/figure-html/aesthetics3-1.svg" style="display: block; margin: auto;" /&gt;
+
+---
+# 1. Aesthetic mappings (cont.)
+
+We can specify aesthetic mappings in the geom layer too.
+
+``` r
+ggplot(data = gapminder, aes(x = gdpPercap, y = lifeExp)) + ## Applicable to all geoms
+  geom_point(aes(size = pop, col = continent), alpha = 0.3) ## Applicable to this geom only
+```
+
+&lt;img src="13-data-viz_files/figure-html/aesthetics4-1.svg" style="display: block; margin: auto;" /&gt;
+
+---
+
+# 1. Aesthetic mappings (cont.)
+
+Oops. What went wrong here?
+
+``` r
+ggplot(data = gapminder, aes(x = gdpPercap, y = lifeExp)) + 
+  geom_point(aes(size = "big", col="black"), alpha = 0.3)
+```
+
+&lt;img src="13-data-viz_files/figure-html/aesthetics_mistake-1.svg" style="display: block; margin: auto;" /&gt;
+
+---
+
+# 1. Aesthetic mappings (cont.)
+
+This is what we wanted to do!
+
+
+``` r
+ggplot(data = gapminder, aes(x = gdpPercap, y = lifeExp)) + 
+  geom_point(size = 3, col="black", alpha = 0.3)
+```
+
+&lt;img src="13-data-viz_files/figure-html/aesthetics_mistake_correct-1.svg" style="display: block; margin: auto;" /&gt;
+
+--
+
+**Note: ** `size` must take a numeric argument, not a character.
+
+---
+# 1. Aesthetic mappings (cont.)
+
+At this point, instead of repeating the same ggplot2 call every time, it will prove convenient to define an intermediate plot object that we can re-use.
+
+
+``` r
+p = ggplot(data = gapminder, aes(x = gdpPercap, y = lifeExp))
+p
+```
+
+&lt;img src="13-data-viz_files/figure-html/p-1.svg" style="display: block; margin: auto;" /&gt;
+
+---
+# 2. Geoms
+
+Why did the base plot have no points or lines or anything?
+
+--
+
+Once your variable relationships have been defined by the aesthetic mappings, you can invoke and combine different geoms to generate different visulaizations.
+
+
+``` r
+p + geom_point(alpha = 0.3) 
+```
+
+&lt;img src="13-data-viz_files/figure-html/geoms1-1.svg" style="display: block; margin: auto;" /&gt;
+
+---
+# 2. Geoms (cont.)
+
+Can add line of best fit using `geom_smooth()`
+
+
+``` r
+p + geom_point(alpha = 0.3)+geom_smooth(method="lm")
+```
+
+```
+## `geom_smooth()` using formula = 'y ~ x'
+```
+
+&lt;img src="13-data-viz_files/figure-html/geoms2-1.svg" style="display: block; margin: auto;" /&gt;
+
+---
+# 2. Geoms (cont.)
+
+A polynomial fit might be more appropriate.
+
+
+``` r
+p + geom_point(alpha = 0.3)+geom_smooth(method="loess")
+```
+
+```
+## `geom_smooth()` using formula = 'y ~ x'
+```
+
+&lt;img src="13-data-viz_files/figure-html/geoms3-1.svg" style="display: block; margin: auto;" /&gt;
+
+---
+# 2. Geoms (cont.)
+
+
+``` r
+p + geom_point(aes(size = pop, col = continent),alpha = 0.3) + 
+  geom_smooth(method="loess")
+```
+
+```
+## `geom_smooth()` using formula = 'y ~ x'
+```
+
+&lt;img src="13-data-viz_files/figure-html/geoms4-1.svg" style="display: block; margin: auto;" /&gt;
+
+---
+# 2. Geoms (cont.)
+
+The previous plot provides a good illustration of the power (or effect) that comes from assigning aesthetic mappings "globally" vs in the individual geom layers.
+- Compare: What happens if you run the below code chunk?
+
+
+``` r
+p_bad = ggplot(data = gapminder, 
+               aes(x = gdpPercap, y = lifeExp, size = pop, col = continent)) +
+  geom_point(alpha = 0.3)  +
+  geom_smooth(method = "loess") 
+```
+
+---
+# 2. Geoms (cont.)
+
+
+``` r
+p_bad
+```
+
+```
+## Warning: Using `size` aesthetic for lines was deprecated in ggplot2 3.4.0.
+## ℹ Please use `linewidth` instead.
+## This warning is displayed once every 8 hours.
+## Call `lifecycle::last_lifecycle_warnings()` to see where this warning was
+## generated.
+```
+
+```
+## `geom_smooth()` using formula = 'y ~ x'
+```
+
+```
+## Warning: The following aesthetics were dropped during statistical transformation: size.
+## ℹ This can happen when ggplot fails to infer the correct grouping structure in
+##   the data.
+## ℹ Did you forget to specify a `group` aesthetic or to convert a numerical
+##   variable into a factor?
+```
+
+&lt;img src="13-data-viz_files/figure-html/geoms5_new-1.png" style="display: block; margin: auto;" /&gt;
+
+---
+# 2. Geoms (cont.)
+
+Similarly, note that some geoms only accept a certain mappings. E.g. geom_density() doesn't know what to do with the "y" aesthetic mapping.
+
+
+``` r
+   p + geom_density()
+```
+
+```
+## Warning: The following aesthetics were dropped during statistical transformation: y.
+## ℹ This can happen when ggplot fails to infer the correct grouping structure in
+##   the data.
+## ℹ Did you forget to specify a `group` aesthetic or to convert a numerical
+##   variable into a factor?
+```
+
+```
+## Error in `geom_density()`:
+## ! Problem while setting up geom.
+## ℹ Error occurred in the 1st layer.
+## Caused by error in `compute_geom_1()`:
+## ! `geom_density()` requires the following missing aesthetics: y.
+```
+
+---
+# 2. Geoms (cont.)
+     
+We can fix that by being more careful about how we build the plot.
+   
+
+``` r
+ggplot(data = gapminder) + ## i.e. No "global" aesthetic mappings"
+geom_density(aes(x = gdpPercap, fill = continent), alpha=0.3)
+```
+
+&lt;img src="13-data-viz_files/figure-html/geoms7-1.svg" style="display: block; margin: auto;" /&gt;
+
+---
+     
+# 3. Build your plot in layers
+     
+We've already seen how we can chain (or "layer") consecutive plot elements using the `+` connector.
+- The fact that we can create and then re-use an intermediate plot object (e.g. "p") is testament to this.
+
+But it bears repeating: You can build out some truly impressive complexity and transformation of your visualization through this simple layering process.
+- You don't have to transform your original data; ggplot2 takes care of all of that.
+- For example (see next slide for figure).
+   
+
+``` r
+   p2 =
+     p +
+     geom_point(aes(size = pop, col = continent), alpha = 0.3) +
+     scale_color_brewer(name = "Continent", palette = "Set1") + ## Different colour scale
+     scale_size(name = "Population", labels = scales::comma) + ## Different point (i.e. legend) scale
+     scale_x_log10(labels = scales::dollar) + ## Switch to logarithmic scale on x-axis. Use dollar units.
+     labs(x = "Log (GDP per capita)", y = "Life Expectancy") + ## Better axis titles
+     theme_minimal() ## Try a minimal (b&amp;w) plot theme
+```
+   
+---
+# 3. Build your plot in layers (cont.)
+     
+&lt;img src="13-data-viz_files/figure-html/layers2-1.svg" style="display: block; margin: auto;" /&gt;
+      
+---
+# What else?
+
+I will be honest, a lot of the more advanced aspects of ggplot2 I do not have memorized. 
+- I don't know how many times I have visited this [Stack Overflow page](https://stackoverflow.com/questions/40675778/center-plot-title-in-ggplot2) on centering a title in ggplot2.
+
+One of the more complicated things is changing the colors of the lines/points manually. 
+
+Let's go through an example of how to do this. 
+
+---
+# Scale Manually
+
+We will use the `mpg` data set that comes with `ggplot2`. We will plot the engine size on the x-axis and the highway mpg on the y-axis. As well, let's color the points by the drive type (4-wheel, front-wheel, or rear-wheel).
+
+
+``` r
+bp = ggplot(mpg)+geom_point(aes(x=displ,y=hwy,color=factor(drv)))
+```
+---
+# Scale Manually (cont.)
+
+&lt;img src="13-data-viz_files/figure-html/unnamed-chunk-8-1.png" style="display: block; margin: auto;" /&gt;
+---
+# Scale Manually (cont.)
+
+These colors are fine, but what if we wanted other colors?
+
+[Here is a reference](http://sape.inf.usi.ch/quick-reference/ggplot2/colour) for the names of the different colors in ggplot2.
+
+Let's make 4-wheel drive lightskyblue1, rear-wheel drive as springgreen1, and front-wheel drive as firebrick1.
+
+
+``` r
+man_cols = c("4" = "lightskyblue1","r" = "springgreen1","f"="firebrick1")
+```
+
+--
+
+Notice, the value of the observation is on the LHS of the equal sign, and the name of the color is on the RHS.
+
+
+``` r
+sort(unique(mpg$drv))
+```
+
+```
+## [1] "4" "f" "r"
+```
+
+---
+# Scale Manually (cont.)
+
+
+``` r
+bp + scale_colour_manual(values=man_cols)
+```
+
+&lt;img src="13-data-viz_files/figure-html/unnamed-chunk-11-1.png" style="display: block; margin: auto;" /&gt;
+---
+# Scale Manually (cont.)
+
+What if we want to change the legend title?
+
+
+``` r
+bp + scale_colour_manual(name="Drive Type",values=man_cols)
+```
+
+&lt;img src="13-data-viz_files/figure-html/unnamed-chunk-12-1.png" style="display: block; margin: auto;" /&gt;
+
+---
+# Update Base Plot 
+
+
+``` r
+bp = bp + scale_colour_manual(name="Drive Type",values=man_cols)
+```
+
+---
+# What else? Titles
+
+Let's add titles:
+
+
+``` r
+bp + xlab("Engine Size") + ylab("Highway MPG") + ggtitle("Highway MPG by Engine Size")
+```
+
+&lt;img src="13-data-viz_files/figure-html/unnamed-chunk-14-1.png" style="display: block; margin: auto;" /&gt;
+
+---
+# What Else? Titles
+
+Notice above that the main title isn't centered. We can fix that. But first, let's update the base plot.
+
+
+``` r
+bp = bp + xlab("Engine Size") + ylab("Highway MPG") +
+  ggtitle("Highway MPG by Engine Size") 
+```
+
+---
+# What Else? Titles
+
+``` r
+bp + theme(plot.title = element_text(hjust = 0.5))
+```
+
+&lt;img src="13-data-viz_files/figure-html/unnamed-chunk-16-1.png" style="display: block; margin: auto;" /&gt;
+
+---
+# What Else? Themes
+
+Be careful with the above code. If you change the base theme, you will need to include the centering code after that. See what happens if you don't.
+
+Let's say we wanted to add the black and white theme. That is `theme_bw()`. If we include this after the code for centering the title, the `theme()` will be overwritten by whatever is set in `theme_bw()`.
+
+---
+# What Else? Themes (cont.)
+
+
+``` r
+bp + theme(plot.title = element_text(hjust = 0.5)) + theme_bw()
+```
+
+&lt;img src="13-data-viz_files/figure-html/unnamed-chunk-17-1.png" style="display: block; margin: auto;" /&gt;
+
+---
+# What Else? Themes (cont.)
+
+
+``` r
+bp + theme_bw() + theme(plot.title = element_text(hjust = 0.5))
+```
+
+&lt;img src="13-data-viz_files/figure-html/unnamed-chunk-18-1.png" style="display: block; margin: auto;" /&gt;
+
+---
+# What Else? Other Geoms and Colors
+
+Let's do one more thing that will require a little work. Let's add a line of best fit without `geom_smooth()`. The reason I want to do this is to manually change the color which can be difficult. 
+
+
+``` r
+hwy_mod = lm(hwy ~ displ,data=mpg)
+mpg$hwy_hat = predict(hwy_mod)
+```
+
+---
+# What Else? Other Geoms and Colors
+
+
+``` r
+man_cols = c("4" = "lightskyblue1","r" = "springgreen1","f"="firebrick1")
+bp = ggplot(mpg)+geom_point(aes(x=displ,y=hwy,color=factor(drv))) + 
+  geom_line(aes(x=displ,y=hwy_hat,linetype = "Best Fit"),color="purple4") + 
+  scale_colour_manual(name="Drive Type",values=man_cols) +
+  scale_linetype_manual(name="Line",values = c("Best Fit" = "dashed")) +
+  xlab("Engine Size") + ylab("Highway MPG") +
+  ggtitle("Highway MPG by Engine Size") + theme_bw() +
+  theme(plot.title = element_text(hjust = 0.5)) 
+```
+---
+# What Else? Other Geoms and Colors
+
+&lt;img src="13-data-viz_files/figure-html/unnamed-chunk-21-1.png" style="display: block; margin: auto;" /&gt;
+
+---
+# What else? (cont.)
+
+There's a lot more to say, but I think we'll stop now for today's lecture.
+
+I want you to do some reading and practice on your own. Pick either of the following (or choose among the litany of online resources) and work through their examples:
+- [Chapter 3](https://r4ds.had.co.nz/data-visualisation.html) of *R for Data Science* by Hadley Wickham and Garett Grolemund.
+- [*Data Visualization: A Practical Guide*](https://socviz.co/makeplot.html) by Kieran Healy.
+- [Designing ggplots](https://designing-ggplots.netlify.com) by Malcom Barrett.
+
+---
+class: inverse, center, middle
+
+# Next lecture: Maps
+&lt;html&gt;&lt;div style='float:left'&gt;&lt;/div&gt;&lt;hr color='#EB811B' size=1px width=796px&gt;&lt;/html&gt;
+
+
+
+    </textarea>
+<style data-target="print-only">@media screen {.remark-slide-container{display:block;}.remark-slide-scaler{box-shadow:none;}}</style>
+<script src="https://remarkjs.com/downloads/remark-latest.min.js"></script>
+<script>var slideshow = remark.create({
+"highlightStyle": "github",
+"highlightLines": true,
+"countIncrementalSlides": false
+});
+if (window.HTMLWidgets) slideshow.on('afterShowSlide', function (slide) {
+  window.dispatchEvent(new Event('resize'));
+});
+(function(d) {
+  var s = d.createElement("style"), r = d.querySelector(".remark-slide-scaler");
+  if (!r) return;
+  s.type = "text/css"; s.innerHTML = "@page {size: " + r.style.width + " " + r.style.height +"; }";
+  d.head.appendChild(s);
+})(document);
+
+(function(d) {
+  var el = d.getElementsByClassName("remark-slides-area");
+  if (!el) return;
+  var slide, slides = slideshow.getSlides(), els = el[0].children;
+  for (var i = 1; i < slides.length; i++) {
+    slide = slides[i];
+    if (slide.properties.continued === "true" || slide.properties.count === "false") {
+      els[i - 1].className += ' has-continuation';
+    }
+  }
+  var s = d.createElement("style");
+  s.type = "text/css"; s.innerHTML = "@media print { .has-continuation { display: none; } }";
+  d.head.appendChild(s);
+})(document);
+// delete the temporary CSS (for displaying all slides initially) when the user
+// starts to view slides
+(function() {
+  var deleted = false;
+  slideshow.on('beforeShowSlide', function(slide) {
+    if (deleted) return;
+    var sheets = document.styleSheets, node;
+    for (var i = 0; i < sheets.length; i++) {
+      node = sheets[i].ownerNode;
+      if (node.dataset["target"] !== "print-only") continue;
+      node.parentNode.removeChild(node);
+    }
+    deleted = true;
+  });
+})();
+// add `data-at-shortcutkeys` attribute to <body> to resolve conflicts with JAWS
+// screen reader (see PR #262)
+(function(d) {
+  let res = {};
+  d.querySelectorAll('.remark-help-content table tr').forEach(tr => {
+    const t = tr.querySelector('td:nth-child(2)').innerText;
+    tr.querySelectorAll('td:first-child .key').forEach(key => {
+      const k = key.innerText;
+      if (/^[a-z]$/.test(k)) res[k] = t;  // must be a single letter (key)
+    });
+  });
+  d.body.setAttribute('data-at-shortcutkeys', JSON.stringify(res));
+})(document);
+(function() {
+  "use strict"
+  // Replace <script> tags in slides area to make them executable
+  var scripts = document.querySelectorAll(
+    '.remark-slides-area .remark-slide-container script'
+  );
+  if (!scripts.length) return;
+  for (var i = 0; i < scripts.length; i++) {
+    var s = document.createElement('script');
+    var code = document.createTextNode(scripts[i].textContent);
+    s.appendChild(code);
+    var scriptAttrs = scripts[i].attributes;
+    for (var j = 0; j < scriptAttrs.length; j++) {
+      s.setAttribute(scriptAttrs[j].name, scriptAttrs[j].value);
+    }
+    scripts[i].parentElement.replaceChild(s, scripts[i]);
+  }
+})();
+(function() {
+  var links = document.getElementsByTagName('a');
+  for (var i = 0; i < links.length; i++) {
+    if (/^(https?:)?\/\//.test(links[i].getAttribute('href'))) {
+      links[i].target = '_blank';
+    }
+  }
+})();
+// adds .remark-code-has-line-highlighted class to <pre> parent elements
+// of code chunks containing highlighted lines with class .remark-code-line-highlighted
+(function(d) {
+  const hlines = d.querySelectorAll('.remark-code-line-highlighted');
+  const preParents = [];
+  const findPreParent = function(line, p = 0) {
+    if (p > 1) return null; // traverse up no further than grandparent
+    const el = line.parentElement;
+    return el.tagName === "PRE" ? el : findPreParent(el, ++p);
+  };
+
+  for (let line of hlines) {
+    let pre = findPreParent(line);
+    if (pre && !preParents.includes(pre)) preParents.push(pre);
+  }
+  preParents.forEach(p => p.classList.add("remark-code-has-line-highlighted"));
+})(document);</script>
+
+<script>
+slideshow._releaseMath = function(el) {
+  var i, text, code, codes = el.getElementsByTagName('code');
+  for (i = 0; i < codes.length;) {
+    code = codes[i];
+    if (code.parentNode.tagName !== 'PRE' && code.childElementCount === 0) {
+      text = code.textContent;
+      if (/^\\\((.|\s)+\\\)$/.test(text) || /^\\\[(.|\s)+\\\]$/.test(text) ||
+          /^\$\$(.|\s)+\$\$$/.test(text) ||
+          /^\\begin\{([^}]+)\}(.|\s)+\\end\{[^}]+\}$/.test(text)) {
+        code.outerHTML = code.innerHTML;  // remove <code></code>
+        continue;
+      }
+    }
+    i++;
+  }
+};
+slideshow._releaseMath(document);
+</script>
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+(function () {
+  var script = document.createElement('script');
+  script.type = 'text/javascript';
+  script.src  = 'https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-MML-AM_CHTML';
+  if (location.protocol !== 'file:' && /^https?:/.test(script.src))
+    script.src  = script.src.replace(/^https?:/, '');
+  document.getElementsByTagName('head')[0].appendChild(script);
+})();
+</script>
+  </body>
+</html>
