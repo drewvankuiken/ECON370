@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="" xml:lang="">
+  <head>
+    <title>Data Science for Economists</title>
+    <meta charset="utf-8" />
+    <meta name="author" content="Drew Van Kuiken" />
+    <script src="libs/header-attrs/header-attrs.js"></script>
+    <link href="libs/remark-css/default.css" rel="stylesheet" />
+    <link href="libs/remark-css/metropolis.css" rel="stylesheet" />
+    <link href="libs/remark-css/metropolis-fonts.css" rel="stylesheet" />
+  </head>
+  <body>
+    <textarea id="source">
+class: center, middle, inverse, title-slide
+
+.title[
+# Data Science for Economists
+]
+.subtitle[
+## Lecture 13: Data Visualization - part 2, Maps
+]
+.author[
+### Drew Van Kuiken
+]
+.date[
+### University of North Carolina | <a href="https://github.com/drewvankuiken/ECON370">ECON 370</a>
+]
+
+---
+
+
+
+
+
+
+
+# Maps
+
+&lt;img src="13-data-viz-maps_files/figure-html/unnamed-chunk-1-1.png" style="display: block; margin: auto;" /&gt;
+
+<svg aria-hidden="true" role="img" viewBox="0 0 512 512" style="height:1em;width:1em;vertical-align:-0.125em;margin-left:auto;margin-right:auto;font-size:inherit;fill:currentColor;overflow:visible;position:relative;"><path d="M208 32c0-17.7 14.3-32 32-32h32c17.7 0 32 14.3 32 32V172.9l122-70.4c15.3-8.8 34.9-3.6 43.7 11.7l16 27.7c8.8 15.3 3.6 34.9-11.7 43.7L352 256l122 70.4c15.3 8.8 20.5 28.4 11.7 43.7l-16 27.7c-8.8 15.3-28.4 20.6-43.7 11.7L304 339.1V480c0 17.7-14.3 32-32 32H240c-17.7 0-32-14.3-32-32V339.1L86 409.6c-15.3 8.8-34.9 3.6-43.7-11.7l-16-27.7c-8.8-15.3-3.6-34.9 11.7-43.7L160 256 38 185.6c-15.3-8.8-20.5-28.4-11.7-43.7l16-27.7C51.1 98.8 70.7 93.6 86 102.4l122 70.4V32z"/></svg> Slides adapted from Grant McDermott's EC 607 at University of Oregon.
+
+---
+# Maps in R
+
+Packages for today:
+
+``` r
+## Load and install the packages that we'll be using today
+if (!require("pacman")) install.packages("pacman")
+pacman::p_load(sf, tidyverse, tigris, tidycensus, jsonlite, httr, maps, spData)
+```
+
+**New packages: sf, tigris, tidycensus**
+
+---
+# Features
+
+We'll use the `sf` and `tigris` packages to get our map data today. Be forewarned: this is a quick and dirty exposition, enough to get you and up and running, but not a full treatment of maps. 
+
+`sf`:
+- Stands for *simple features*
+- Treats features (e.g., zip codes, borders, trees, you name it) as data frames
+- Great practice for data wrangling!
+
+---
+# Shapefiles
+
+The sf package has some maps pre-loaded for us. Let's start by looking at the counties of North Carolina. 
+
+
+``` r
+file_loc = system.file("shape/nc.shp", package="sf")
+nc = st_read(file_loc, quiet = TRUE)
+head(nc)
+```
+
+```
+## Simple feature collection with 6 features and 14 fields
+## Geometry type: MULTIPOLYGON
+## Dimension:     XY
+## Bounding box:  xmin: -81.74107 ymin: 36.07282 xmax: -75.77316 ymax: 36.58965
+## Geodetic CRS:  NAD27
+##    AREA PERIMETER CNTY_ CNTY_ID        NAME  FIPS FIPSNO CRESS_ID BIR74 SID74
+## 1 0.114     1.442  1825    1825        Ashe 37009  37009        5  1091     1
+## 2 0.061     1.231  1827    1827   Alleghany 37005  37005        3   487     0
+## 3 0.143     1.630  1828    1828       Surry 37171  37171       86  3188     5
+## 4 0.070     2.968  1831    1831   Currituck 37053  37053       27   508     1
+## 5 0.153     2.206  1832    1832 Northampton 37131  37131       66  1421     9
+## 6 0.097     1.670  1833    1833    Hertford 37091  37091       46  1452     7
+##   NWBIR74 BIR79 SID79 NWBIR79                       geometry
+## 1      10  1364     0      19 MULTIPOLYGON (((-81.47276 3...
+## 2      10   542     3      12 MULTIPOLYGON (((-81.23989 3...
+## 3     208  3616     6     260 MULTIPOLYGON (((-80.45634 3...
+## 4     123   830     2     145 MULTIPOLYGON (((-76.00897 3...
+## 5    1066  1606     3    1197 MULTIPOLYGON (((-77.21767 3...
+## 6     954  1838     5    1237 MULTIPOLYGON (((-76.74506 3...
+```
+
+---
+# Our first plot
+
+
+``` r
+ggplot(nc) + geom_sf(aes(geometry=geometry, fill=AREA), col="white") + scale_fill_viridis_c(name = "Area") + ggtitle("Counties of North Carolina")
+```
+
+&lt;img src="13-data-viz-maps_files/figure-html/unnamed-chunk-4-1.png" style="display: block; margin: auto;" /&gt;
+---
+# Geodetic CRS
+
+Otherwise known as the **projection** we're using. There are [lots](https://xkcd.com/977/) of projections we can use. 
+
+To change projection, we can use the `st_transform` function:
+
+``` r
+nc_moll &lt;- nc |&gt; 
+  st_transform(crs = "+proj=moll") # using the Mollweide projection
+head(nc_moll)
+```
+
+```
+## Simple feature collection with 6 features and 14 fields
+## Geometry type: MULTIPOLYGON
+## Dimension:     XY
+## Bounding box:  xmin: -7160488 ymin: 4345895 xmax: -6638106 ymax: 4404766
+## Projected CRS: +proj=moll
+##    AREA PERIMETER CNTY_ CNTY_ID        NAME  FIPS FIPSNO CRESS_ID BIR74 SID74
+## 1 0.114     1.442  1825    1825        Ashe 37009  37009        5  1091     1
+## 2 0.061     1.231  1827    1827   Alleghany 37005  37005        3   487     0
+## 3 0.143     1.630  1828    1828       Surry 37171  37171       86  3188     5
+## 4 0.070     2.968  1831    1831   Currituck 37053  37053       27   508     1
+## 5 0.153     2.206  1832    1832 Northampton 37131  37131       66  1421     9
+## 6 0.097     1.670  1833    1833    Hertford 37091  37091       46  1452     7
+##   NWBIR74 BIR79 SID79 NWBIR79                       geometry
+## 1      10  1364     0      19 MULTIPOLYGON (((-7145982 43...
+## 2      10   542     3      12 MULTIPOLYGON (((-7118092 43...
+## 3     208  3616     6     260 MULTIPOLYGON (((-7056368 43...
+## 4     123   830     2     145 MULTIPOLYGON (((-6662197 43...
+## 5    1066  1606     3    1197 MULTIPOLYGON (((-6772398 43...
+## 6     954  1838     5    1237 MULTIPOLYGON (((-6731326 43...
+```
+
+---
+# Mollweide? 
+
+Looks like this: 
+&lt;img src="13-data-viz-maps_files/figure-html/unnamed-chunk-6-1.png" style="display: block; margin: auto;" /&gt;
+
+Not super useful. Keep the projection thing in mind though, it will come up later. 
+
+---
+# Wrangling
+
+We can use the tidyverse to work with sf objects:
+
+``` r
+triangle &lt;- nc |&gt; 
+  filter(NAME %in% c("Durham","Wake","Orange", "Chatham")) |&gt; 
+  mutate(AREA = AREA*1000) |&gt; 
+  select(NAME,AREA, everything())
+head(triangle)
+```
+
+```
+## Simple feature collection with 4 features and 14 fields
+## Geometry type: MULTIPOLYGON
+## Dimension:     XY
+## Bounding box:  xmin: -79.55536 ymin: 35.51024 xmax: -78.25455 ymax: 36.23569
+## Geodetic CRS:  NAD27
+##      NAME AREA PERIMETER CNTY_ CNTY_ID  FIPS FIPSNO CRESS_ID BIR74 SID74
+## 1  Orange  104     1.294  1907    1907 37135  37135       68  3164     4
+## 2  Durham   77     1.271  1908    1908 37063  37063       32  7970    16
+## 3    Wake  219     2.130  1938    1938 37183  37183       92 14484    16
+## 4 Chatham  180     2.142  1973    1973 37037  37037       19  1646     2
+##   NWBIR74 BIR79 SID79 NWBIR79                       geometry
+## 1     776  4478     6    1086 MULTIPOLYGON (((-79.01814 3...
+## 2    3732 10432    22    4948 MULTIPOLYGON (((-79.01814 3...
+## 3    4397 20857    31    6221 MULTIPOLYGON (((-78.92107 3...
+## 4     591  2398     3     687 MULTIPOLYGON (((-79.55536 3...
+```
+
+---
+# Special Operations
+
+We can melt geographies into larger geographic units using `st_union`:
+
+
+``` r
+triangle |&gt; st_union() |&gt; ggplot() + geom_sf(fill=NA,col="black") + labs(title = "The Triangle") + theme_minimal()
+```
+
+&lt;img src="13-data-viz-maps_files/figure-html/unnamed-chunk-8-1.png" style="display: block; margin: auto;" /&gt;
+
+---
+# Other Operations
+
+We're not going to focus on the full suite of operations available today. Here's a quick overview: 
+- `st_area`: get area of shape
+- `st_centroid`: get geographic center of area
+- `st_boundary`: returns boundary of geometry
+- `st_buffer`: creates buffer around each observation
+- `st_distance`: distance between two objects (or more)
+
+---
+# Multiple Datasets
+
+Let's pick up two new datasets:
+
+``` r
+france = st_as_sf(map('france', plot=FALSE, fill=TRUE))
+france = france[-c(95),] # observation causing some issues, not important
+head(france)
+```
+
+```
+## Simple feature collection with 6 features and 1 field
+## Geometry type: MULTIPOLYGON
+## Dimension:     XY
+## Bounding box:  xmin: 0.06215676 ymin: 48.86568 xmax: 5.372333 ymax: 51.09752
+## Geodetic CRS:  +proj=longlat +ellps=clrk66 +no_defs +type=crs
+##                            ID                           geom
+## Nord                     Nord MULTIPOLYGON (((2.557093 51...
+## Pas-de-Calais   Pas-de-Calais MULTIPOLYGON (((2.105322 51...
+## Somme                   Somme MULTIPOLYGON (((1.623103 50...
+## Ardennes             Ardennes MULTIPOLYGON (((4.220728 49...
+## Seine-Maritime Seine-Maritime MULTIPOLYGON (((1.419646 50...
+## Aisne                   Aisne MULTIPOLYGON (((3.15867 50....
+```
+
+``` r
+data("seine", package = "spData")
+head(seine)
+```
+
+```
+## Simple feature collection with 3 features and 1 field
+## Geometry type: MULTILINESTRING
+## Dimension:     XY
+## Bounding box:  xmin: 518344.7 ymin: 6660431 xmax: 879955.3 ymax: 6938864
+## Projected CRS: RGF93 / Lambert-93
+##    name                       geometry
+## 1 Marne MULTILINESTRING ((879955.3 ...
+## 2 Seine MULTILINESTRING ((828893.6 ...
+## 3 Yonne MULTILINESTRING ((773482.1 ...
+```
+
+---
+# Merging
+
+A couple thoughts: 
+1. `st_as_sf`: turns non-shapefile data into shapefile data. `st_as_sf(x,coordinates=c("longitude","latitude"))` turns any lat/lon data into a sf object.
+2. `st_intersect`: creates a dataset with the exact points of overlap between two objects. 
+3. `st_join`: joins together two sf objects based on any overlapping geometries
+  - Example of 2 and 3 in a sec
+  
+Try taking the intersection of the france and seine sf objects now.
+
+---
+# Didn't Work, Huh
+
+Why didn't it work? 
+
+--
+&lt;br&gt;
+
+
+``` r
+seine_crs = st_transform(seine, crs = st_crs(france))
+france_intersected = st_intersection(france, seine_crs) 
+```
+
+```
+## Warning: attribute variables are assumed to be spatially constant throughout
+## all geometries
+```
+The projections were different!
+
+---
+# So what'd we create?
+
+&lt;img src="13-data-viz-maps_files/figure-html/unnamed-chunk-11-1.png" style="display: block; margin: auto;" /&gt;
+
+---
+# Trying out joins
+
+
+``` r
+france_river &lt;- st_join(france,seine_crs) |&gt; # what kind of join is this?
+  filter(!is.na(name)) |&gt; 
+  distinct(ID, .keep_all = T) # some rows merge twice because 2 branches of river
+head(france_river)
+```
+
+```
+## Simple feature collection with 6 features and 2 fields
+## Geometry type: MULTIPOLYGON
+## Dimension:     XY
+## Bounding box:  xmin: 0.06215676 ymin: 48.44897 xmax: 5.032294 ymax: 50.08539
+## Geodetic CRS:  +proj=longlat +ellps=clrk66 +no_defs +type=crs
+##                            ID  name                           geom
+## Seine-Maritime Seine-Maritime Seine MULTIPOLYGON (((1.419646 50...
+## Aisne                   Aisne Marne MULTIPOLYGON (((3.15867 50....
+## Eure                     Eure Seine MULTIPOLYGON (((0.4339198 4...
+## Marne                   Marne Marne MULTIPOLYGON (((4.059515 49...
+## Val-Doise           Val-Doise Seine MULTIPOLYGON (((1.706263 49...
+## Yvelines             Yvelines Seine MULTIPOLYGON (((1.624106 49...
+```
+
+---
+# Put It In a Graph
+
+&lt;img src="13-data-viz-maps_files/figure-html/unnamed-chunk-13-1.png" style="display: block; margin: auto;" /&gt;
+
+---
+# tidycensus
+
+The tidycensus package lets you avoid setting up even an API call to get census data, it's sort of amazing. 
+
+We'll only scratch the surface of the tidycensus package. If you wanted to get ACS data (zipcode-level survey on all kinds of stuff), you'd need to grab an API key from the census. The instructions to do this are in the class script for today. 
+
+One thing that's available in the tidycensus: TIGER/Line shapefiles (to access these, we loaded the `tigris` package)
+
+Tiger shapefiles can give us shapefiles for things like: nations, regions, states, counties, census tracts, school districts, zip codes, and [way more](https://github.com/walkerke/tigris)
+
+---
+# Zip Codes in NY
+
+Let's grab the zip codes for the urban area New York City:
+
+``` r
+ny_zips &lt;- zctas(state = "NY", class = "sf", year = 2010) # zips only available in 2010
+urb &lt;- urban_areas(year=2020) |&gt; filter(grepl("New York",NAME10))
+ny_urb_zips &lt;- st_join(ny_zips,urb) |&gt; filter(!is.na(NAME10))
+```
+
+Your task -- create 2 graphs:
+1. Zip codes of NYC which contain trees downloaded from NYC Open Data
+2. All zip codes in NY urban area, with points representing trees in NYC
+    </textarea>
+<style data-target="print-only">@media screen {.remark-slide-container{display:block;}.remark-slide-scaler{box-shadow:none;}}</style>
+<script src="https://remarkjs.com/downloads/remark-latest.min.js"></script>
+<script>var slideshow = remark.create({
+"highlightStyle": "github",
+"highlightLines": true,
+"countIncrementalSlides": false
+});
+if (window.HTMLWidgets) slideshow.on('afterShowSlide', function (slide) {
+  window.dispatchEvent(new Event('resize'));
+});
+(function(d) {
+  var s = d.createElement("style"), r = d.querySelector(".remark-slide-scaler");
+  if (!r) return;
+  s.type = "text/css"; s.innerHTML = "@page {size: " + r.style.width + " " + r.style.height +"; }";
+  d.head.appendChild(s);
+})(document);
+
+(function(d) {
+  var el = d.getElementsByClassName("remark-slides-area");
+  if (!el) return;
+  var slide, slides = slideshow.getSlides(), els = el[0].children;
+  for (var i = 1; i < slides.length; i++) {
+    slide = slides[i];
+    if (slide.properties.continued === "true" || slide.properties.count === "false") {
+      els[i - 1].className += ' has-continuation';
+    }
+  }
+  var s = d.createElement("style");
+  s.type = "text/css"; s.innerHTML = "@media print { .has-continuation { display: none; } }";
+  d.head.appendChild(s);
+})(document);
+// delete the temporary CSS (for displaying all slides initially) when the user
+// starts to view slides
+(function() {
+  var deleted = false;
+  slideshow.on('beforeShowSlide', function(slide) {
+    if (deleted) return;
+    var sheets = document.styleSheets, node;
+    for (var i = 0; i < sheets.length; i++) {
+      node = sheets[i].ownerNode;
+      if (node.dataset["target"] !== "print-only") continue;
+      node.parentNode.removeChild(node);
+    }
+    deleted = true;
+  });
+})();
+// add `data-at-shortcutkeys` attribute to <body> to resolve conflicts with JAWS
+// screen reader (see PR #262)
+(function(d) {
+  let res = {};
+  d.querySelectorAll('.remark-help-content table tr').forEach(tr => {
+    const t = tr.querySelector('td:nth-child(2)').innerText;
+    tr.querySelectorAll('td:first-child .key').forEach(key => {
+      const k = key.innerText;
+      if (/^[a-z]$/.test(k)) res[k] = t;  // must be a single letter (key)
+    });
+  });
+  d.body.setAttribute('data-at-shortcutkeys', JSON.stringify(res));
+})(document);
+(function() {
+  "use strict"
+  // Replace <script> tags in slides area to make them executable
+  var scripts = document.querySelectorAll(
+    '.remark-slides-area .remark-slide-container script'
+  );
+  if (!scripts.length) return;
+  for (var i = 0; i < scripts.length; i++) {
+    var s = document.createElement('script');
+    var code = document.createTextNode(scripts[i].textContent);
+    s.appendChild(code);
+    var scriptAttrs = scripts[i].attributes;
+    for (var j = 0; j < scriptAttrs.length; j++) {
+      s.setAttribute(scriptAttrs[j].name, scriptAttrs[j].value);
+    }
+    scripts[i].parentElement.replaceChild(s, scripts[i]);
+  }
+})();
+(function() {
+  var links = document.getElementsByTagName('a');
+  for (var i = 0; i < links.length; i++) {
+    if (/^(https?:)?\/\//.test(links[i].getAttribute('href'))) {
+      links[i].target = '_blank';
+    }
+  }
+})();
+// adds .remark-code-has-line-highlighted class to <pre> parent elements
+// of code chunks containing highlighted lines with class .remark-code-line-highlighted
+(function(d) {
+  const hlines = d.querySelectorAll('.remark-code-line-highlighted');
+  const preParents = [];
+  const findPreParent = function(line, p = 0) {
+    if (p > 1) return null; // traverse up no further than grandparent
+    const el = line.parentElement;
+    return el.tagName === "PRE" ? el : findPreParent(el, ++p);
+  };
+
+  for (let line of hlines) {
+    let pre = findPreParent(line);
+    if (pre && !preParents.includes(pre)) preParents.push(pre);
+  }
+  preParents.forEach(p => p.classList.add("remark-code-has-line-highlighted"));
+})(document);</script>
+
+<script>
+slideshow._releaseMath = function(el) {
+  var i, text, code, codes = el.getElementsByTagName('code');
+  for (i = 0; i < codes.length;) {
+    code = codes[i];
+    if (code.parentNode.tagName !== 'PRE' && code.childElementCount === 0) {
+      text = code.textContent;
+      if (/^\\\((.|\s)+\\\)$/.test(text) || /^\\\[(.|\s)+\\\]$/.test(text) ||
+          /^\$\$(.|\s)+\$\$$/.test(text) ||
+          /^\\begin\{([^}]+)\}(.|\s)+\\end\{[^}]+\}$/.test(text)) {
+        code.outerHTML = code.innerHTML;  // remove <code></code>
+        continue;
+      }
+    }
+    i++;
+  }
+};
+slideshow._releaseMath(document);
+</script>
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+(function () {
+  var script = document.createElement('script');
+  script.type = 'text/javascript';
+  script.src  = 'https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-MML-AM_CHTML';
+  if (location.protocol !== 'file:' && /^https?:/.test(script.src))
+    script.src  = script.src.replace(/^https?:/, '');
+  document.getElementsByTagName('head')[0].appendChild(script);
+})();
+</script>
+  </body>
+</html>

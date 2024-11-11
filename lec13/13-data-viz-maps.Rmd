@@ -1,0 +1,251 @@
+---
+title: "Data Science for Economists"
+# subtitle: "<html><div style='float:left'></div><hr color='#EB811B' size=1px width=796px></html>"
+subtitle: "Lecture 13: Data Visualization - part 2, Maps"
+author: "Drew Van Kuiken"
+date: "University of North Carolina | [ECON 370](https://github.com/drewvankuiken/ECON370)" #"`r format(Sys.time(), '%d %B %Y')`"
+output:
+  xaringan::moon_reader:
+    css: [default, metropolis, metropolis-fonts] 
+    lib_dir: libs
+    nature:
+      highlightStyle: github
+      highlightLines: true
+      countIncrementalSlides: false
+---
+
+```{r xaringan-themer, include=FALSE, warning=FALSE}
+library(xaringanthemer)
+style_mono_accent(
+  base_color = "#4B9CD3",
+  header_font_google = google_font("Fira Sans","600"),
+  text_font_google   = google_font("Fira Sans", "300", "300i"),
+  base_font_size = "20px",
+  text_font_size = "0.9rem",
+  code_inline_font_size = "0.9em",
+  code_font_size = "0.7rem",
+  header_h1_font_size = "2.0rem",
+  header_h2_font_size = "1.75rem",
+  header_h3_font_size = "1.25rem",
+  code_font_google   = google_font("Fira Code"),
+  inverse_link_color = "#13294B",
+  link_color = "#4B9CD3"
+)
+```
+
+
+```{r setup, include=FALSE}
+# xaringanExtra::use_scribble() ## Draw on slides. Requires dev version of xaringanExtra.
+
+options(htmltools.dir.version = FALSE)
+library(knitr)
+opts_chunk$set(
+  fig.align="center",  
+  fig.height=4, #fig.width=6,
+  # out.width="748px", #out.length="520.75px",
+  dpi=300, #fig.path='Figs/',
+  cache=T#, echo=F, warning=F, message=F
+  )
+library(tidyverse)
+library(hrbrthemes)
+library(fontawesome)
+source("./lec13_maps_script.R")
+```
+
+# Maps
+
+```{r, echo=FALSE}
+ggplot(nyc_data) + 
+  geom_sf(aes(geometry=geometry), colour = "white") +
+  geom_point(aes(x=longitude, y=latitude, size=stump_diam), alpha=0.5) +
+  scale_size_continuous(name = "Stump diameter") +
+  labs(
+    x = "Longitude", y = "Latitude",
+    title = "Sample of New York City trees",
+    caption = "Source: NYC Open Data"
+  ) +
+  theme_minimal()
+```
+
+`r fa('star-of-life')` Slides adapted from Grant McDermott's EC 607 at University of Oregon.
+
+---
+# Maps in R
+
+Packages for today:
+```{r}
+## Load and install the packages that we'll be using today
+if (!require("pacman")) install.packages("pacman")
+pacman::p_load(sf, tidyverse, tigris, tidycensus, jsonlite, httr, maps, spData)
+```
+
+**New packages: sf, tigris, tidycensus**
+
+---
+# Features
+
+We'll use the `sf` and `tigris` packages to get our map data today. Be forewarned: this is a quick and dirty exposition, enough to get you and up and running, but not a full treatment of maps. 
+
+`sf`:
+- Stands for *simple features*
+- Treats features (e.g., zip codes, borders, trees, you name it) as data frames
+- Great practice for data wrangling!
+
+---
+# Shapefiles
+
+The sf package has some maps pre-loaded for us. Let's start by looking at the counties of North Carolina. 
+
+```{r}
+file_loc = system.file("shape/nc.shp", package="sf")
+nc = st_read(file_loc, quiet = TRUE)
+head(nc)
+```
+
+---
+# Our first plot
+
+```{r}
+ggplot(nc) + geom_sf(aes(geometry=geometry, fill=AREA), col="white") + scale_fill_viridis_c(name = "Area") + ggtitle("Counties of North Carolina")
+```
+---
+# Geodetic CRS
+
+Otherwise known as the **projection** we're using. There are [lots](https://xkcd.com/977/) of projections we can use. 
+
+To change projection, we can use the `st_transform` function:
+```{r}
+nc_moll <- nc |> 
+  st_transform(crs = "+proj=moll") # using the Mollweide projection
+head(nc_moll)
+```
+
+---
+# Mollweide? 
+
+Looks like this: 
+```{r, echo=FALSE}
+ggplot(nc_moll) + geom_sf(aes(geometry=geometry, fill=AREA), col="white") + scale_fill_viridis_c(name = "Area") + ggtitle("North Carolina in Mollweide")
+```
+
+Not super useful. Keep the projection thing in mind though, it will come up later. 
+
+---
+# Wrangling
+
+We can use the tidyverse to work with sf objects:
+```{r}
+triangle <- nc |> 
+  filter(NAME %in% c("Durham","Wake","Orange", "Chatham")) |> 
+  mutate(AREA = AREA*1000) |> 
+  select(NAME,AREA, everything())
+head(triangle)
+```
+
+---
+# Special Operations
+
+We can melt geographies into larger geographic units using `st_union`:
+
+```{r}
+triangle |> st_union() |> ggplot() + geom_sf(fill=NA,col="black") + labs(title = "The Triangle") + theme_minimal()
+```
+
+---
+# Other Operations
+
+We're not going to focus on the full suite of operations available today. Here's a quick overview: 
+- `st_area`: get area of shape
+- `st_centroid`: get geographic center of area
+- `st_boundary`: returns boundary of geometry
+- `st_buffer`: creates buffer around each observation
+- `st_distance`: distance between two objects (or more)
+
+---
+# Multiple Datasets
+
+Let's pick up two new datasets:
+```{r}
+france = st_as_sf(map('france', plot=FALSE, fill=TRUE))
+france = france[-c(95),] # observation causing some issues, not important
+head(france)
+data("seine", package = "spData")
+head(seine)
+```
+
+---
+# Merging
+
+A couple thoughts: 
+1. `st_as_sf`: turns non-shapefile data into shapefile data. `st_as_sf(x,coordinates=c("longitude","latitude"))` turns any lat/lon data into a sf object.
+2. `st_intersect`: creates a dataset with the exact points of overlap between two objects. 
+3. `st_join`: joins together two sf objects based on any overlapping geometries
+  - Example of 2 and 3 in a sec
+  
+Try taking the intersection of the france and seine sf objects now.
+
+---
+# Didn't Work, Huh
+
+Why didn't it work? 
+
+--
+<br>
+
+```{r}
+seine_crs = st_transform(seine, crs = st_crs(france))
+france_intersected = st_intersection(france, seine_crs) 
+```
+The projections were different!
+
+---
+# So what'd we create?
+
+```{r,echo=FALSE}
+france_intersected |> ggplot() + geom_sf(alpha = 0.8, aes(fill = ID, col = ID)) + labs(title = "Seine, Marne and Yonne rivers", caption = "Colours depict French administrative regions") + theme(legend.title = element_blank())
+```
+
+---
+# Trying out joins
+
+```{r}
+france_river <- st_join(france,seine_crs) |> # what kind of join is this?
+  filter(!is.na(name)) |> 
+  distinct(ID, .keep_all = T) # some rows merge twice because 2 branches of river
+head(france_river)
+```
+
+---
+# Put It In a Graph
+
+```{r, echo=FALSE}
+ggplot(france_river) + 
+  geom_sf(alpha = 0.8, fill = "black", col = "gray50") + 
+  geom_sf(data = seine, col = "#05E9FF", lwd = 1) + 
+  labs(title = "Intersected regions only")
+```
+
+---
+# tidycensus
+
+The tidycensus package lets you avoid setting up even an API call to get census data, it's sort of amazing. 
+
+We'll only scratch the surface of the tidycensus package. If you wanted to get ACS data (zipcode-level survey on all kinds of stuff), you'd need to grab an API key from the census. The instructions to do this are in the class script for today. 
+
+One thing that's available in the tidycensus: TIGER/Line shapefiles (to access these, we loaded the `tigris` package)
+
+Tiger shapefiles can give us shapefiles for things like: nations, regions, states, counties, census tracts, school districts, zip codes, and [way more](https://github.com/walkerke/tigris)
+
+---
+# Zip Codes in NY
+
+Let's grab the zip codes for the urban area New York City:
+```{r}
+ny_zips <- zctas(state = "NY", class = "sf", year = 2010) # zips only available in 2010
+urb <- urban_areas(year=2020) |> filter(grepl("New York",NAME10))
+ny_urb_zips <- st_join(ny_zips,urb) |> filter(!is.na(NAME10))
+```
+
+Your task -- create 2 graphs:
+1. Zip codes of NYC which contain trees downloaded from NYC Open Data
+2. All zip codes in NY urban area, with points representing trees in NYC
