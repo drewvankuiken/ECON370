@@ -1,0 +1,997 @@
+---
+title: "Data Science for Economists"
+# subtitle: "<html><div style='float:left'></div><hr color='#EB811B' size=1px width=796px></html>"
+subtitle: "Lecture 15: Unsupervised Learning"
+author: "Drew Van Kuiken"
+date: "University of North Carolina | [ECON 370](https://github.com/drewvankuiken/ECON370)" #"`r format(Sys.time(), '%d %B %Y')`"
+output:
+  xaringan::moon_reader:
+    css: [default, metropolis, metropolis-fonts] 
+    lib_dir: libs
+    nature:
+      highlightStyle: github
+      highlightLines: true
+      countIncrementalSlides: false
+---
+
+```{r xaringan-themer, include=FALSE, warning=FALSE}
+library(xaringanthemer)
+style_mono_accent(
+  base_color = "#4B9CD3",
+  header_font_google = google_font("Fira Sans","600"),
+  text_font_google   = google_font("Fira Sans", "300", "300i"),
+  base_font_size = "20px",
+  text_font_size = "0.9rem",
+  code_inline_font_size = "0.9em",
+  code_font_size = "0.7rem",
+  header_h1_font_size = "2.0rem",
+  header_h2_font_size = "1.75rem",
+  header_h3_font_size = "1.25rem",
+  code_font_google   = google_font("Fira Code"),
+  inverse_link_color = "#13294B",
+  link_color = "#4B9CD3"
+)
+```
+
+```{r setup, include=FALSE}
+# xaringanExtra::use_scribble() ## Draw on slides. Requires dev version of xaringanExtra.
+
+options(htmltools.dir.version = FALSE)
+
+library(knitr)
+library(tidyverse)
+library(hrbrthemes)
+library(fontawesome)
+library(data.table)
+library(ggpubr)
+library(MASS)
+library(wesanderson)
+library(mvtnorm)
+
+opts_chunk$set(
+  fig.align="center",  
+  fig.height=3.75, #fig.width=6,
+  # out.width="748px", #out.length="520.75px",
+  dpi=300, #fig.path='Figs/',
+  cache=F#, echo=F, warning=F, message=F
+  )
+
+data(mtcars)
+```
+
+
+# Table of contents
+
+1. [Introduction](#intro)
+
+2. [Unsupervised Learning](#unsup)
+
+3. [Clustering](#clustering)
+
+ - [K-Means](#kmeans)
+ - [EM-Algorithn](#EM)
+
+
+---
+class: inverse, center, middle
+name: intro
+
+# Introduction
+
+<html><div style='float:left'></div><hr color='#EB811B' size=1px width=796px></html>
+
+---
+# Motivation
+
+We've already touched briefly on what unsupervised learning is.
+
+These methods are the methods that y'all have likely not seen.
+
+The idea of these methods is for when there's something unobserved you would like to either reduce or group together.
+
+
+---
+class: inverse, center, middle
+name: unsup
+
+# Unsupervised Learning
+
+<html><div style='float:left'></div><hr color='#EB811B' size=1px width=796px></html>
+
+---
+# Unsupervised Learning
+
+Unsupervised learning is a bit more challenging and less understood than supervised learning.
+
+> We are not interested in prediction, because we do not have an associated response variable $Y$. Rather, the goal is to discover interesting things about the measurements on $X_1, X_2, ..., X_d$.
+
+There is no simple goal and is often more subjective. 
+
+Is largely part of exploratory analysis.
+
+There are two common unsupervised learning algorithms: 
+1. Principal Components Analysis (PCA)
+2. Clustering
+
+We are going to skip PCA.
+
+---
+class: inverse, center, middle
+name: clustering
+
+# Clustering
+
+<html><div style='float:left'></div><hr color='#EB811B' size=1px width=796px></html>
+
+---
+# Clustering
+
+Clustering refers to a broad set of techniques to find subgroups or "clusters" in data.
+
+With clustering, we often have a reason to believe that there is "heterogeneity" among groups, but don't really know how to label this heterogeneity. 
+
+Clustering can be used to find these groups.
+
+Example: Market segmentation.
+
+--
+
+There are two types of clustering:
+1. Hard Clustering: assign groups to observations with certainty (probability 1).
+2. Soft Clustering: assign probabilities of belonging to each group to all observations. These probabilities can be between 0 and 1.
+
+---
+class: inverse, center, middle
+name: kmeans
+
+# K-Means Clustering
+
+<html><div style='float:left'></div><hr color='#EB811B' size=1px width=796px></html>
+
+---
+# K-Means
+
+$K$-means clustering is a simple and elegant approach for partitioning a data set into $K$ distinct, non-overlapping clusters.
+
+--
+
+$K$ must be specified and then each observation is assigned to one of the $K$ groups.
+
+```{r, echo=FALSE, out.width="80%"}
+knitr::include_graphics("pics/kmeans.png")
+```
+
+---
+# K-Means
+
+Let $C_1,...,C_K$ denote sets containing the indicies of the observations in each cluster.
+
+1. $C_1\cup C_2 ... \cup C_K = \{1,...,n\}$. In words, each observation belongs to at least one of the $K$ clusters.
+
+2. $C_k \cap C_{k'} = \emptyset$ for all $k\neq k'$. In words, the clusters are non- overlapping: no observation belongs to more than one cluster.
+
+We want to choose $C_1,...,C_K$ in such a way that they solve: $$\min_{C_1,...,C_K} \sum_{k=1}^{K} W(C_k)$$ where $W(C_k)$ is some measure of "with-in cluster" variation of cluster $k$.
+- Minimizes the "within group variance."
+
+The most common choice of $W(C_k)$ is $$W\left(C_{k}\right)=\frac{1}{\left|C_{k}\right|} \sum_{i, i^{\prime} \in C_{k}} \sum_{j=1}^{d}\left(x_{i j}-x_{i^{\prime} j}\right)^{2}$$
+
+---
+# K-Means
+
+Putting this all together, we want to choose $C_1,...,C_K$ s.t. they solve the following optimization problem $$\min_{C_1,...,C_K} \sum_{k=1}^{K} \frac{1}{\left|C_{k}\right|} \sum_{i, i^{\prime} \in C_{k}} \sum_{j=1}^{d}\left(x_{i j}-x_{i^{\prime} j}\right)^{2}$$
+
+--
+
+Now, how do we solve?
+
+--
+
+This is actually a hard problem to solve. Fortunately, there is a way to find a local minima.
+ - Not guaranteed to achieve the global minimum.
+ - Remember everything we talked about in the optimization lecture.
+  - e.g. Could solve multiple times and pick the solution with the best fit criterion.
+
+---
+# K-Means Algorithm
+
+The $K$-means minimization problem can be solved using the following algorithm.
+
+1. Randomly assign a number, from 1 to $K$, to each of the observations. These serve as initial cluster assignments for the observations.
+2. Iterate until the cluster assignments stop changing:
+ - For each of the $K$ clusters, compute the cluster *centroid*. The $k^\text{th}$ cluster *centroid* is the vector of the $d$ feature means for the observations in the $k^\text{th}$ cluster.
+ - Assign each observation to the cluster whose *centroid* is closest (where closest is defined using Euclidean distance).
+
+Let $\boldsymbol{\mu}^k=(\mu^k_1,...,\mu^k_d)$ be the centroid of cluster $k$ and $\boldsymbol{x}_i=(x_{i1},...,x_{id})$.
+
+Euclidean Distance/Norm:
+
+$$||\boldsymbol{x}_i-\boldsymbol{\mu}^k||_2=\Big(\sum_{j=1}^{d}(x_{ij}-\mu^k_j)^2\Big)^{\frac{1}{2}}=\sqrt{\sum_{j=1}^{d}(x_{ij}-\mu^k_j)^2}$$
+---
+# K-Means Algorithm
+
+```{r, echo=FALSE, out.width="72%"}
+knitr::include_graphics("pics/kmeans-algo.png")
+```
+
+---
+# K-Means Algorithm
+
+```{r, echo=FALSE, out.width="72%"}
+knitr::include_graphics("pics/kmeans-local.png")
+```
+
+---
+#K-Means Example
+
+Generate some data and show you how the $K$-means algorithm is programmed.
+- Don't worry: There is a $K$-means function that we will use later.
+
+```{r gen_kmeans_data}
+#requires the following packages: mvtnorm, data.table, ggpubr
+set.seed(123)
+N = 100000; K = 2; P = 2; NK=N*K # set parameters to generate data
+data_MC1 = rmvnorm(N,c(17,17),matrix(c(10,0,0,10),ncol=2)) # draw data group 1
+data_MC2 = rmvnorm(N,c(10,10),matrix(c(10,9,9,10),ncol=2)) # draw data group 2
+data_MC  = as.data.table(rbind(data_MC1,data_MC2)) # rbind the two datasets
+data_MC[,group:=ifelse(.I/.N>0.5,2,1)]    # assign groups
+setnames(data_MC,c("V1","V2"),c("x","y")) # rename variables
+data_MC[c(1:3,(.N-2):.N)]                 # show first and last 3 rows
+```
+
+---
+#K-Means Example: Scatter Plots
+
+```{r,echo=F}
+colvals = c("Group 1"="darkred","Group 2"="dodgerblue3")
+scatter_plot = ggplot(data=data_MC,aes(x=x,y=y)) +
+  geom_point() + 
+  coord_cartesian(xlim=c(-5,35),ylim=c(-5,35))+
+  theme_minimal()
+
+scatter_plot_group = ggplot(mapping=aes(x=x,y=y))+
+  geom_point(aes(color="Group 1"),data=data_MC[group==1]) + 
+  geom_point(aes(color="Group 2"),data=data_MC[group==2]) + 
+  scale_color_manual(name="",values=colvals)+
+  coord_cartesian(xlim=c(-5,35),ylim=c(-5,35))+
+  theme_minimal()+theme(legend.position = "top")
+
+density_plot = ggplot(data_MC,aes(x=x,y=y))+
+  geom_density_2d(color="black",bins=20,adjust=1.25) + 
+  coord_cartesian(xlim=c(0,25),ylim=c(0,25))+
+  theme_minimal()+theme(legend.position = "top")
+
+density_plot_group = ggplot(mapping=aes(x=x,y=y))+
+  geom_density_2d(aes(color="Group 1"),data=data_MC[group==1],bins=10,adjust=1.25) + 
+  geom_density_2d(aes(color="Group 2"),data=data_MC[group==2],bins=10,adjust=1.25) + 
+  scale_color_manual(name="",values=colvals)+
+  coord_cartesian(xlim=c(0,25),ylim=c(0,25))+
+  theme_minimal()+theme(legend.position = "top")
+
+ggarrange(scatter_plot,scatter_plot_group,ncol=2,labels=c("Together","By Group"),common.legend = T)
+```
+
+Two clear groups but there's lots of overlap between the two.
+- Without the labels, cannot know for sure which group where there is overlap.
+
+---
+#K-Means Example: Distribution Densities
+
+To better understand the overlap, look at the joint density (distribution).
+- 3D plot looked at from above
+
+```{r,echo=F}
+ggarrange(density_plot,density_plot_group,ncol=2,labels=c("Together","By Group"),common.legend = T)
+```
+
+---
+# K-Means Algorithm: First Step
+
+```{r kmeans_step1}
+data_MC[,group_assign:=sample(1:K,K*N,replace=T)] # randomly assign initial groups
+## --- Calculate centroids
+# Centroids are just the average of every variable by assigned group 
+centroids = data_MC[,lapply(.SD, mean),by=group_assign,.SDcols=c("x","y")] 
+setorder(centroids,group_assign); centroids # sort by assigned group and print
+dat_mat = as.matrix(data_MC[,.(x,y)]) # store data as a matrix
+Dist    = array(0,dim=c(NK,K))        # initialize distance matrix
+## --- Define norm function for calculating distances
+# p == 2 is the Euclidean distance/Pythogreon theorem. p == Inf is sup-norm
+norm = function(x,p=2) if(p==Inf) max(abs(x)) else sum(abs(x)^p)^(1/p)
+
+## --- For each group and observation, calculate distance to each centroid 
+for(k in 1:K){
+  cent_mat = centroids[rep(k,NK),.(x,y)]    # store centroids for group k
+  cent_mat = as.matrix(cent_mat)            # guarantee cent_mat is a matrix
+  Dist[,k] = apply(dat_mat-cent_mat,1,norm) # calculate Euclidean Distance
+}
+new_groups = apply(Dist,1,which.min) # new group is whichever has the smallest distance
+```
+
+---
+# K-Means Algorithm: While Loop
+
+```{r kmeans_loop}
+## --- Continue the same process until no observations change groups
+while(sum(data_MC$group_assign != new_groups)>0){
+  data_MC[,group_assign:=new_groups] # assign new groups
+  ## --- Calculate centroids
+  centroids = data_MC[,lapply(.SD, mean),by=group_assign,.SDcols=c("x","y")] 
+  centroids = centroids[order(group_assign)] # sort centroids by group
+
+  for(k in 1:K){
+    cent_mat = centroids[rep(k,NK),.(x,y)]    # store centroids for k
+    cent_mat = as.matrix(cent_mat)            # make cent_mat a matrix
+    Dist[,k] = apply(dat_mat-cent_mat,1,norm) # calculate Euclidean distance
+  }
+  new_groups = apply(Dist,1,which.min) # new group is whichever has smallest distance
+}
+
+data_MC[,group_assign:=new_groups] # assign final groups
+centroids
+```
+
+---
+# K-Means Example: kmeans Function
+
+`R` has a built-in $K$-means function.
+```{r kmeans_function}
+kmeans_out = kmeans(data_MC[,.(x,y)],centers=2,nstart=10,iter.max=100)
+kmeans_out$centers
+```
+
+Very similar results.
+- `nstart` is how many times we solve the problem
+
+--
+
+```{r kmeans_function_out}
+kmeans_out$withinss # within cluster sum-of-squares
+kmeans_out$tot.withinss # total within sum-of-squares
+```
+
+`tot.withinss` is what the algorithm is trying to minimize.
+
+---
+# K-Means Example 
+
+```{r,echo=F}
+scatter_plot_group_assign = ggplot(mapping=aes(x=x,y=y))+
+  geom_point(aes(color="Group 1"),data=data_MC[group_assign==1]) + 
+  geom_point(aes(color="Group 2"),data=data_MC[group_assign==2]) + 
+  scale_color_manual(name="",values=colvals)+
+  coord_cartesian(xlim=c(-5,35),ylim=c(-5,35))+
+  theme_minimal()+theme(legend.position = "top")
+
+ggarrange(scatter_plot_group,scatter_plot_group_assign,ncol=2,labels=c("True Group","K-Means Group"),
+          common.legend = T,legend="top")
+```
+
+K-Means does not do well when there is lots of overlap of the groups.
+
+---
+class: inverse, center, middle
+name: EM
+
+# Soft Clustering: The EM Algorithm
+
+<html><div style='float:left'></div><hr color='#EB811B' size=1px width=796px></html>
+
+---
+# Soft Clustering
+
+Notice that $K$-means performs poorly when there's lots of overlap in the data.
+
+Idea: What if we model the clustering and assign probabilities to the group?
+
+Downsides: Must specify a model for the data to be generated from.
+
+Upsides: Can assign probabilities.
+
+--
+
+The rest of the lecture, we will be using the following example to motivate the method:
+
+### Differences in height (and weight) by sex
+
+---
+# Height Differences by Sex: NHIS Data
+
+From the CDC's website, you can download data from the National Health Interview Survey. 
+
+[We will be using the adult 2019 data.](https://www.cdc.gov/nchs/nhis/2019nhis.htm)
+
+This is real data gathered from the US population regarding health. 
+
+```{r LoadNHISData}
+data_path = "/Users/drewvankuiken/Dropbox/ECON370/local/lec15/"
+NHIS_data = fread(paste0(data_path,"adult19.csv"))
+NHIS_data = NHIS_data[SEX_A<7]    #remove responses not male or female
+setnames(NHIS_data,c("HEIGHTTC_A","WEIGHTLBTC_A"),c("height","weight"))
+NHIS_data = NHIS_data[height<96]  #remove non-numerical responses
+NHIS_data = NHIS_data[weight<900] #remove non-numerical responses
+NHIS_data[,sex:="Male"]; NHIS_data[SEX_A==2,sex:="Female"] # create sex var
+NHIS_plot_data = copy(NHIS_data); NHIS_plot_data[,sex:="All"]
+NHIS_plot_data = rbind(NHIS_plot_data[,.(sex,height,weight)],
+                       NHIS_data[,.(sex,height,weight)])
+hght_moms = NHIS_plot_data[,list("mu"=mean(height),"var"=var(height)),by=sex]
+hght_moms[order(sex,decreasing = T),]
+```
+
+
+---
+# Distribution of Height by Sex
+
+```{r CreateTheoreticalData,echo=F}
+hght_moms = hght_moms[order(sex,decreasing = T),]
+xs      = seq(55,80,0.1)
+ys      = t(sapply(xs,function(x){dnorm(x,hght_moms[,mu],sqrt(hght_moms[,var]))}))
+sex     = rep(c("Male","Female","All"),each=length(xs))
+theodat = data.table(height=xs,dens = c(ys[,1],ys[,2],ys[,3]),sex=sex)
+```
+
+```{r CreateHeightPlotBySex, echo=F}
+colvals  = c("Male"="darkred","Female"="dodgerblue3","All"= "black")
+fillvals = alpha(colvals,0.15)
+
+ggplot(NHIS_plot_data,aes(x=height)) + 
+  
+  geom_density(aes(color=sex),adjust=2) + 
+  
+  geom_area(aes(y=dens,fill="Male"),data=theodat[sex=="Male"],alpha=0.15) +
+  geom_area(aes(y=dens,fill="Female"),data=theodat[sex=="Female"],alpha=0.15) +
+  geom_area(aes(y=dens,fill="All"),data=theodat[sex=="All"],alpha=0.15) +
+  scale_fill_manual(name="Assume Normal",values=fillvals) +
+  
+  scale_x_continuous(breaks=seq(50,90,by=5)) + 
+  scale_color_manual(name="Empirical",values=colvals) + 
+  xlab("Height in Inches") +ylab("Density") +
+  theme_minimal() + theme(legend.position = "top")
+```
+
+Each empirical distribution (i.e. the distribution of the data) by sex looks normal! 
+- The "total" distribution is a *mixture* of males and females.
+
+---
+# Model for Sex Differences in Height
+
+It seems reasonable to assume that height is normally distributed conditional on sex where males and females have different distributions.
+- If sex is labeled in the data, then can simply group on sex.
+
+--
+
+What if we don't observe someone's sex? How can we model this?
+- To be clear, this is a thought experiment. There is a variable for sex in the data. 
+- This is to show you what to do if we didn't.
+
+--
+
+Simple Statistical Model for Height
+- Person $i$ is assigned $M$ with probability $\alpha$ and $F$ with probability $1-\alpha$
+- $s_i \in\{M,F\}$ and $s_i$ is person $i$'s sex.
+- Assume height $h_i$ is drawn from $N(\mu_{s_i},\sigma^2_{s_i})$ 
+ - Each person's height is drawn from a distribution that depends upon their sex
+- This is called a Normal (or Gaussian) Mixture Model
+ - The entire population's height distribution is a mixture of two normals where each sex has its own distribution.
+
+--
+
+Given a sample of $(h_i)_{i=1}^{N}$, how can we estimate $\mu_M, \mu_F, \sigma^2_M,\sigma^2_F,$ and $\alpha$?
+
+---
+# Expectation-Maximization (EM)
+An algorithm called the EM algorithm can be used to estimate the parameters.
+- Today we discuss it in the context of a Gaussian Mixture Model, but it can be used for any model where one variable is a mixture of different groups and the group labels are not observed.
+
+--
+
+There are two steps:
+1. **The Expectation Step**: calculate probability each observation belongs a group.
+2. **The Maximization Step**: re-estimate the parameters given the new probabilities.
+
+This requires something called Bayes' Rule. 
+
+---
+# Bayes' Rule and EM
+
+Denote $P(M|h_i)=P(\text{sex}_i = M | \text{height}=h_i)$ i.e. the prob $i$ is male *given* $i$'s height $h_i$.
+
+Bayes's rule states:
+
+$$P(M|h_i) = \frac{P(h_i|M)P(M)}{P(h_i|M)P(M)+P(h_i|F)P(F))}$$
+--
+
+- $P(M) = \alpha$ and $P(F)=1-\alpha$ are the baseline probs of being $M/F$. 
+- $P(h_i|M)$ is the "probability" of height $h_i$ if we **knew** the individual was male. Since our model assumes $h_i \sim N(\mu_M,\sigma^2_M)$ if male, we know $P(h_i|M) = \phi(h_i;\mu_M,\sigma^2_M)$
+ - That is $\phi$ is the pdf of the normal distribution; the `dnorm` function in `R`.
+
+$$P(M|h_i) = \frac{\phi(h_i;\mu_M,\sigma^2_M)\alpha}{\phi(h_i;\mu_M,\sigma^2_M)\alpha+\phi(h_i;\mu_F,\sigma^2_F)(1-\alpha)}$$
+--
+
+If we knew $(\mu_M,\mu_F,\sigma^2_M,\sigma^2_F,\alpha)$, we could compute $P(M|h_i)$.
+
+However, we need $P(M|h_i)$ to estimate $(\mu_M,\mu_F,\sigma^2_M,\sigma^2_F,\alpha)$.
+
+The EM algorithm allows us to do both by alternating between the E and M steps.
+
+---
+# EM Algorithm
+
+Denote $\theta_n = (\mu_{M,n},\mu_{F,n},\sigma^2_{M,n},\sigma^2_{F,n},\alpha_n)$ as the parameter estimates after $n$ iterations.
+
+--
+
+Step 0: Initialize $\theta_0$ somehow. 
+- The easiest way to do this is to run $K$-means.
+- Use the resulting groups from $K$-means to calculate group means, variances, and proportions.
+- Assume males are the group with the larger mean height.
+- This gives us initial guesses of $\theta_0=(\mu_{M,0},\mu_{F,0},\sigma^2_{M,0},\sigma^2_{F,0}, \alpha_0)$.
+
+--
+
+Step 1: 
+ - **E-Step**: Calculate $P(M|h_i;\theta_0) = \pi^M_1(h_i)$ using Bayes' Rule. 
+  - Note $\pi^F_1(h_i) = 1-\pi^M_1(h_i)$
+ - **M-Step**: Calculate $\theta_1$ given $\pi^M_1(h_i)$ and the data. Formulas on next slide.
+  - These are basically just weighted versions of the sample mean and sample variance where the weights are $\pi^M_1(h_i)$ and $\pi^F_1(h_i)$ for males and females respectively.
+ 
+--
+ 
+Step n: Continue alternating between the E-Step and M-Step until $||\theta_n - \theta_{n-1}||_p < \varepsilon$
+
+---
+# Normal Mixture Formulas
+
+$$N_M = \sum_{i=1}^{N} \pi^M_{n}(h_i)$$
+$$N_F = N - N_M$$
+
+$$\mu_{M,n} = \frac{1}{N_M}\sum_{i=1}^{N}\pi^M_{n}(h_i)h_i$$ $$\mu_{F,n} = \frac{1}{N_F}\sum_{i=1}^{N}\pi^F_{n}(h_i)h_i$$
+$$\sigma^2_{M,n} = \frac{1}{N_M}\sum_{i=1}^{N}\pi^M_{n}(h_i)(h_i-\mu_{M,n})^2$$
+$$\sigma^2_{F,n} = \frac{1}{N_F}\sum_{i=1}^{N}\pi^F_{n}(h_i)(h_i-\mu_{F,n})^2$$
+$$\alpha_n = \frac{N_M}{N}$$
+---
+# Functions for Parameter Estimation
+
+The formulas on the last slides are essentially weighted means and variances 
+- The weights are the probability of belonging to the group.
+
+```{r EM_functions}
+## --- Function for weighted mean
+mean_wgt = function(x,ws) sum(ws*x)/sum(ws)
+## --- Function for weighted variance
+var_wgt = function(x,ws) sum(ws*(x-mean_wgt(x,ws))^2)/sum(ws)
+## --- Function for weight sample proportion
+prop_wgt = function(ws) sum(ws)/length(ws)
+```
+
+---
+# EM Algorithm: Set-Up
+
+Use K-means with $K=2$ to classify observations into two initial groups.
+- Use these groups to get initial calculations of $(\mu_M,\mu_F,\sigma^2_M,\sigma^2_F,\alpha)$.
+
+```{r EM_initial_setup}
+## ---- Initial clusters using k-means 
+his   = NHIS_data[,height]           # store heights
+h_kms = kmeans(NHIS_data[,height],2) # run k-means with k=2
+
+## ---- Create table of parameters based on the k-means clusters
+M_id = which.max(h_kms$centers)                    # get male id based on max height
+tdat = data.table(height=his,id=h_kms$cluster)     # create table of heights and ids 
+tdat[,sex:=ifelse(id==M_id,"Male","Female")]       # add sex labels to ids
+tdat = tdat[,list(mu=mean(height),sig2=var(height),# calc mu's, sig2's, and probs
+                  prob=.N/nrow(tdat)),by=sex]      # by sex
+tdat = tdat[order(sex,decreasing=T)]               # make sure Male is first row
+theta0 = c(tdat[,mu],tdat[,sig2],tdat[1,prob])    # form theta0
+names(theta0)=c("muM","muF","sig2M","sig2F","alpha") # give names to elements of theta0
+theta0
+theta1 = theta0 # initialize theta1
+```
+
+---
+# EM Algorithm: Initial Step
+
+```{r EM_initial_step0}
+#E-Step
+mu0s  = theta0[c("muM","muF")]                # store mus
+sig0s = sqrt(theta0[c("sig2M","sig2F")])      # store sigmas
+alpha = theta0["alpha"]                       # store alpha
+pMh   = dnorm(his,mu0s[1],sig0s[1])*alpha     # prob data and male
+pFh   = dnorm(his,mu0s[2],sig0s[2])*(1-alpha) # prob data and female
+piMh  = pMh/(pMh+pFh)                         # prob male given data
+
+#M-Step
+theta1["muM"]   = mean_wgt(his,piMh)     # male mean
+theta1["muF"]   = mean_wgt(his,1-piMh)   # female mean
+theta1["sig2M"] = var_wgt(his,piMh)      # male variance
+theta1["sig2F"] = var_wgt(his,1-piMh)    # female variance
+theta1["alpha"] = prop_wgt(piMh)         # prob male
+
+cbind(theta0,theta1)
+```
+
+---
+# EM Algorithm: While Loop
+
+```{r EM_loop}
+## ---- EM Loop: Run Until Convergence
+while (norm(theta0 - theta1,p=Inf) > 1e-12) {
+  ## ---- E-Step
+  theta0 = theta1                                # update theta0
+  mu0s   = theta0[c("muM","muF")]                # store mus
+  sig0s  = sqrt(theta0[c("sig2M","sig2F")])      # store sigmas
+  alpha  = theta0["alpha"]                       # store alpha
+  pMh    = dnorm(his,mu0s[1],sig0s[1])*alpha     # prob data and male
+  pFh    = dnorm(his,mu0s[2],sig0s[2])*(1-alpha) # prob data and female
+  piMh   = pMh/(pMh+pFh)                         # prob male given data
+
+  #M-Step
+  theta1["muM"]   = mean_wgt(his,piMh)     # male mean
+  theta1["muF"]   = mean_wgt(his,1-piMh)   # female mean
+  theta1["sig2M"] = var_wgt(his,piMh)      # male variance
+  theta1["sig2F"] = var_wgt(his,1-piMh)    # female variance
+  theta1["alpha"] = prop_wgt(piMh)         # prob male
+}
+theta1
+```
+
+---
+# EM Algorithm: Results
+
+```{r create_moms_EM}
+EM_moms   = data.table(sex  = c("Male","Female"),
+                       mu   = theta1[c("muM","muF")],
+                       sig2 = theta1[c("sig2M","sig2F")],
+                       prob = c(theta1["alpha"],1-theta1["alpha"]))
+hght_moms = cbind(hght_moms,data.table(prob=c(mean(NHIS_data$sex=="Male"),
+                                              mean(NHIS_data$sex=="Female"),1)))
+```
+
+Mean and variance by sex estimated with EM algorithm
+```{r compare_EM_algo,echo=F}
+EM_moms 
+```
+
+Mean and variance by sex grouping by the sex variable in the data
+```{r compareEM_data,echo=F}
+hght_moms[sex!="All"] 
+```
+
+--
+
+They are pretty similar, though the baseline probabilities $\alpha$ are "switched."
+- This is a known problem with the EM algorithm.
+
+---
+# mclust Package
+
+The `mclust` package can be used to implement Gaussian Mixture Models.
+
+```{r mclustPackage,message=F}
+library(mclust)
+GMM         = Mclust(his,G=2,control=emControl(tol=c(1e-15,1e-15)))
+print("here")
+GMM_mu      = GMM$parameters$mean
+print("here2")
+GMM_sig2    = GMM$parameters$variance$sigmasq
+print("Here3")
+GMM_probs   = GMM$parameters$pro
+print("here4")
+mclust_moms = data.table(sex  = c("Female","Male"),
+                         mu   = GMM_mu,
+                         sig2 = GMM_sig2,
+                         prob = GMM_probs)
+print("here5")
+mclust_moms = mclust_moms[order(sex,decreasing = T)]
+print("here6")
+```
+
+---
+# mcluster Package Comparison
+
+```{r mclustPackageComparison}
+mclust_moms # results from mclust package
+EM_moms # results from my EM code
+hght_moms[sex!="All",] # means and vars by sex from data
+```
+
+The results from my code are basically the same as the package.
+
+---
+# Assigning Probabilities In Data
+
+```{r show_probs}
+pMh  = dnorm(his,theta1["muM"],sqrt(theta1["sig2M"]))*theta1["alpha"]
+pFh  = dnorm(his,theta1["muF"],sqrt(theta1["sig2F"]))*(1-theta1["alpha"])
+piMh = pMh/(pMh+pFh)
+
+NHIS_data[,prob_M := piMh]
+NHIS_data[,.(height,prob_M,sex)]
+```
+
+Extreme heights (really small or really large) makes it easy to distinguish a man vs a woman based solely on the height.
+
+---
+# Assigning Probabilities In Data
+
+```{r show_probs_half}
+NHIS_data[abs(prob_M-0.5)<=0.15,.(height,prob_M,sex)]
+```
+
+The heights that are around 0.5 probability are 5' 6" and 5' 7".
+- Makes sense since these are the heights that are likely to have the most overlap between men and women.
+
+---
+# Estimated vs Empirical Distributions
+
+```{r,echo=F}
+mix_pdf = function(x){
+  dnorm(x,theta1["muM"],sqrt(theta1["sig2M"]))*theta1["alpha"]+
+    dnorm(x,theta1["muF"],sqrt(theta1["sig2F"]))*(1-theta1["alpha"])
+}
+
+names(colvals)[3] = "Mixture"
+
+plot_data=ggplot(NHIS_plot_data,aes(x=height)) + 
+  geom_density(aes(color=sex),adjust=2)+
+  scale_x_continuous(breaks=seq(50,90,by=5)) + 
+  scale_color_manual(name="",values=colvals) +
+  coord_cartesian(ylim=c(0,0.175),xlim=quantile(NHIS_data$height,probs=c(0,1)))+
+  xlab("Height") + ylab("Density")+
+  theme_minimal() + 
+  theme(plot.title = element_text(hjust=0.5),
+        legend.position = "top") 
+
+plot_data = ggplot_build(plot_data)
+plot_data = as.data.table(plot_data$data[[1]])
+plot_data = plot_data[,.(x,y,colour)]
+
+setnames(plot_data,c("x","y","colour"),c("height","Empirical","color"))
+plot_data[,sex:="Mixture"]
+plot_data[grepl("blue",color),sex:="Female"]
+plot_data[grepl("red",color),sex:="Male"]
+
+plot_data[,color:=NULL]
+
+plot_data[sex=="Male",Estimated:=dnorm(height,theta1["muM"],sqrt(theta1["sig2M"]))]
+plot_data[sex=="Female",Estimated:=dnorm(height,theta1["muF"],sqrt(theta1["sig2F"]))]
+plot_data[sex=="Mixture",Estimated:=mix_pdf(height)]
+
+plot_data = melt(plot_data,id.vars = c("height","sex"),
+                 variable.name = "distribution",
+                 value.name = "density")
+
+linevals = c("Empirical"="dotted","Estimated"="solid")
+
+ggplot(plot_data,aes(x=height,y=density,color=sex)) + 
+  geom_line(aes(linetype=distribution)) + 
+  scale_color_manual(values=colvals,name="")+
+  scale_linetype_manual(name="",values=linevals)+
+  scale_x_continuous(breaks=seq(0,100,5))+
+  coord_cartesian(xlim=quantile(NHIS_data$height,probs=c(0,1)))+
+  xlab("Height") + ylab("Density") +
+  theme_minimal() + theme(legend.position = "top") 
+
+```
+
+EM does a pretty good job of estimating the distribution of the data.
+
+---
+# Modeling Height and Weight
+
+Could do the same thing with height and weight.
+- Will now also estimate the covariance between height and weight.
+
+```{r height_and_weight_data}
+
+data_moms = NHIS_plot_data[,list(
+  "mu_h"=mean(height),"var_h"=var(height),
+  "mu_w"=mean(weight),"var_w"=var(weight),
+  "cov_hw"=cov(height,weight),"alpha"=.N/nrow(NHIS_data)),by=sex]
+data_moms[order(sex,decreasing = T)]
+```
+
+"mu\_h" is the mean of height, "var\_w" is the variance of weight, etc.
+- "cov\_hw" is the covariance of height and weight.
+- Now 11 parameters to estimate.
+
+---
+# Height vs Weight Scatter Plot by Sex
+
+```{r height_weight_scatter,echo=F}
+data_moms = data_moms[order(sex,decreasing = T)]
+
+ggplot(NHIS_data,aes(x=height,y=weight,color=sex)) +
+  geom_point() + 
+  scale_color_manual(name="",values = colvals[1:2])+
+  ylab("Weight in Pounds")+xlab("Height in Inches")+
+  theme_minimal()+theme(legend.position = "top")
+```
+
+Men and women are clearly seperated in two groups that overlap a bit.
+
+---
+# Joint Distribution by Sex
+
+```{r joint_dist_plot,warning=F,echo=F}
+
+ggplot(NHIS_data,aes(x=height,y=weight,color=sex))+
+  geom_density_2d(adjust=c(2,1.5))+
+  scale_color_manual(name="",values = colvals[1:2])+
+  scale_y_continuous(limits =c(75,275))+
+  scale_x_continuous(limits =c(57.5,77.5))+
+  ylab("Weight in Pounds")+xlab("Height in Inches")+
+  theme_minimal()+theme(legend.position = "top")
+set.seed(1234)
+```
+
+Assuming that height and weight are distributed jointly normal might be reasonable
+- Weight seems to be skewed upwards, so it isn't exactly normal.
+
+---
+# Estimation with mclust package
+
+```{r joint_est_mclust,message=F,warning=F,cache=T}
+# Fit model 100 times and take the result with lowest BIC
+# EVV is a model about the covariance matrix:
+# Basically, we are only assuming the "volume" of M/F vcov mat are the same
+# The same volume means the determinants of the two matrices are the same
+bic = Inf 
+for(i in 1:100){ 
+  temp=Mclust(NHIS_data[,.(height,weight)],G=2,modelNames = "EVV",
+           control=emControl(tol=c(1e-15,1e-15),itmax=c(1000,1000)))
+  if(temp$bic<bic) GMM = temp; bic = GMM$bic
+}
+## --- Store estimated parameters
+mus_est    = GMM$parameters$mean
+vcovs_est  = list(GMM$parameters$variance$sigma[,,1],
+                  GMM$parameters$variance$sigma[,,2])
+alphas_est = GMM$parameters$pro
+Mid        = which.max(mus_est["height",])
+ids        = c(Mid,setdiff(1:2,Mid))
+
+## --- Give Male/Female labels to objects
+colnames(mus_est)[ids] = c("Male","Female")
+names(vcovs_est)[ids]  = c("Male","Female")
+names(alphas_est)[ids] = c("Male","Female")
+```
+
+---
+# Estimation Results
+
+```{r estimation_results}
+mus_est # estimated means
+vcovs_est # estimated covariance matrices
+alphas_est # estimated proportions/probabilities
+```
+
+---
+# Compare Results
+
+```{r reshape_results,include=F}
+newmat = matrix(c(mus_est["height",c("Male","Female")],
+                  vcovs_est$Male[1,1],vcovs_est$Female[1,1],
+                  mus_est["weight",c("Male","Female")],
+                  vcovs_est$Male[2,2],vcovs_est$Female[2,2],
+                  vcovs_est$Male[1,2],vcovs_est$Female[1,2],
+                  alphas_est[c("Male","Female")]),nrow=2)
+colnames(newmat) = c("mu_h","var_h","mu_w","var_w","cov_hw","alpha")
+GMM_results_dt = as.data.table(newmat)
+GMM_results_dt[,sex:=c("Male","Female")]
+setcolorder(GMM_results_dt,"sex")
+```
+
+```{r compare_results_joint}
+GMM_results_dt
+data_moms[1:2,]
+```
+
+Results are pretty good, though some of the variance/covariance terms are off.
+- These are generally much harder to pin down.
+
+---
+# Comparing EM Results to Data
+
+```{r combined_plots,message=F,echo=F,warning=F}
+namels    = list(c("height","weight"),c("height","weight"))
+mus_dat   = as.matrix(t(data_moms[1:2,c(2,4)]))
+vcovs_dat = list(matrix(as.numeric(data_moms[1,c(3,6,6,5)]),
+                        ncol=2,dimnames = namels),
+                 matrix(as.numeric(data_moms[2,c(3,6,6,5)]),
+                        ncol=2,dimnames = namels))
+alphas_dat = NHIS_data[,.N,by=sex][,N]/nrow(NHIS_data)
+
+colnames(mus_dat)=c("Male","Female")
+names(vcovs_dat)=colnames(mus_dat)
+names(alphas_dat)=names(vcovs_dat)
+
+
+grid_data = CJ(height=NHIS_data[,seq(57.5,77.5,0.1)],
+               weight=NHIS_data[,seq(75,275,0.1)],
+               sex=c("Male","Female"))
+
+mdens_est = mvtnorm::dmvnorm(grid_data[sex=="Male",.(height,weight)],mus_est[,Mid],vcovs_est[[Mid]])  
+fdens_est = mvtnorm::dmvnorm(grid_data[sex!="Male",.(height,weight)],mus_est[,-Mid],vcovs_est[[-Mid]])  
+
+mdens_dat = mvtnorm::dmvnorm(grid_data[sex=="Male",.(height,weight)],mus_dat[,1],vcovs_dat[[1]])  
+fdens_dat = mvtnorm::dmvnorm(grid_data[sex!="Male",.(height,weight)],mus_dat[,2],vcovs_dat[[2]])  
+
+grid_data[sex=="Male",density_est:=mdens_est]
+grid_data[sex=="Female",density_est:=fdens_est]
+grid_data[sex=="Male",density_dat:=mdens_dat]
+grid_data[sex=="Female",density_dat:=fdens_dat]
+
+point_data = data.table(means=c(mus_est[,Mid],mus_est[,-Mid]),
+                        variable=rep(c("height","weight"),2),
+                        sex=rep(c("Male","Female"),each=2))
+
+point_data = dcast(point_data,sex~variable,value.var="means")
+point_data[,type:="Estimated"]
+
+point_data2=NHIS_data[,lapply(.SD,mean),by=sex,.SDcols=c("height","weight")]
+point_data2[,type:="Empirical"]
+
+plot1=ggplot(mapping=aes(x=height,y=weight))+
+  geom_contour(aes(z=density_est,color="Male"),data=grid_data[sex=="Male"],bins=10)+
+  geom_contour(aes(z=density_est,color="Female"),data=grid_data[sex=="Female"],bins=10)+
+  geom_point(aes(color=sex),data=point_data,size=2)+
+  scale_color_manual(name="",values = colvals[1:2])+
+  scale_y_continuous(limits =c(75,275))+
+  scale_x_continuous(limits =c(57.5,77.5))+
+  ylab("Weight in Pounds")+xlab("Height in Inches")+
+  theme_minimal() + theme(legend.position = "top")
+
+plot2=ggplot(mapping=aes(x=height,y=weight))+
+  geom_contour(aes(z=density_dat,color="Male"),data=grid_data[sex=="Male"],bins=10)+
+  geom_contour(aes(z=density_dat,color="Female"),data=grid_data[sex=="Female"],bins=10)+
+  geom_point(aes(color=sex),data=point_data2,size=2)+
+  scale_color_manual(name="",values = colvals[1:2])+
+  scale_y_continuous(limits =c(75,275))+
+  scale_x_continuous(limits =c(57.5,77.5))+
+  ylab("Weight in Pounds")+xlab("Height in Inches")+
+  theme_minimal() + theme(legend.position = "top")
+
+plot3=ggplot(NHIS_data,aes(x=height,y=weight,color=sex))+
+  geom_density_2d(adjust=c(2,1.5))+
+  geom_point(data=point_data2,size=2)+
+  scale_color_manual(name="",values = colvals[1:2])+
+  scale_y_continuous(limits =c(75,275))+
+  scale_x_continuous(limits =c(57.5,77.5))+
+  ylab("Weight in Pounds")+xlab("Height in Inches")+
+  theme_minimal()+theme(legend.position = "top")
+
+ggarrange(plot1,plot2,plot3, ncol=3,
+          labels=c("Normal: EM","Normal: Data","Empirical"),
+          common.legend = T,legend = "top")
+```
+
+Height and weight might not be distributed jointly normal.
+- EM still recovers the parameters if we assume that they are.
+- Remember: Empirical means assuming nothing about the distribution.
+
+---
+# Readings and Other Resources
+
+## Readings
+
+- Chapter 12 of [*An Introduction to Statistical Learning*](https://web.stanford.edu/~hastie/ISLR2/ISLRv2_website.pdf)
+- Chapter 9 of [*Pattern Recognition and Machine Learning*](http://users.isr.ist.utl.pt/~wurmd/Livros/school/Bishop%20-%20Pattern%20Recognition%20And%20Machine%20Learning%20-%20Springer%20%202006.pdf) by Christopher Bishop
+- Economics paper that uses EM: 
+ - ["A Study of Cartel Stability: The Joint Executive Committee, 1880-1886"](https://www.jstor.org/stable/3003634?seq=1#metadata_info_tab_contents) by Robert Porter (1983 *The Bell Journal of Economics*) (now *The RAND Journal of Economics*)
+
+## Other Resources
+
+- [`mixtools` package for general, finite mixture models](https://github.com/dsy109/mixtools)
+ - Can fit more than just  Normal (Gaussian) Mixture Models
+ - [Paper about `mixtools` package](https://cran.r-project.org/web/packages/mixtools/vignettes/mixtools.pdf)
+ - [`mixtools` documentation](https://cran.r-project.org/web/packages/mixtools/mixtools.pdf)
+
+---
+class: inverse, center, middle
+
+# Next lecture: Supervised Learning
+<html><div style='float:left'></div><hr color='#EB811B' size=1px width=796px></html>
+
+```{r gen_pdf, include = FALSE, cache = FALSE, eval = TRUE}
+infile = list.files(pattern = '.html')
+#pagedown::chrome_print(input = infile, timeout = 100)
+```
