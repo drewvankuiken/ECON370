@@ -1,0 +1,123 @@
+---
+title: "Data Science for Economists"
+# subtitle: "<html><div style='float:left'></div><hr color='#EB811B' size=1px width=796px></html>"
+subtitle: "Lecture 17: Presentation Tips"
+author: "Drew Van Kuiken"
+date: "University of North Carolina | [ECON 370](https://github.com/drewvankuiken/ECON370)" #"`r format(Sys.time(), '%d %B %Y')`"
+output:
+  xaringan::moon_reader:
+    css: [default, metropolis, metropolis-fonts] 
+    lib_dir: libs
+    nature:
+      highlightStyle: github
+      highlightLines: true
+      countIncrementalSlides: false
+---
+
+```{r xaringan-themer, include=FALSE, warning=FALSE}
+library(xaringanthemer)
+style_mono_accent(
+  base_color = "#4B9CD3",
+  header_font_google = google_font("Fira Sans","600"),
+  text_font_google   = google_font("Fira Sans", "300", "300i"),
+  base_font_size = "20px",
+  text_font_size = "0.9rem",
+  code_inline_font_size = "0.9em",
+  code_font_size = "0.7rem",
+  header_h1_font_size = "2.0rem",
+  header_h2_font_size = "1.75rem",
+  header_h3_font_size = "1.25rem",
+  code_font_google   = google_font("Fira Code"),
+  inverse_link_color = "#13294B",
+  link_color = "#4B9CD3"
+)
+data(mtcars)
+```
+
+
+```{r setup, include=FALSE}
+# xaringanExtra::use_scribble() ## Draw on slides. Requires dev version of xaringanExtra.
+
+options(htmltools.dir.version = FALSE)
+library(knitr)
+opts_chunk$set(
+  fig.align="center",  
+  fig.height=4, #fig.width=6,
+  # out.width="748px", #out.length="520.75px",
+  dpi=300, #fig.path='Figs/',
+  cache=T#, echo=F, warning=F, message=F
+  )
+library(tidyverse)
+library(hrbrthemes)
+library(fontawesome)
+```
+# Assorted Details
+
+Final will be held in Gardner 307 - our normal classroom
+
+To submit your final project: 
+- Submit via **Dropbox**
+- Folder link: [link](https://www.dropbox.com/scl/fo/r26aw4pii0a1uuatzp2fc/AALbvUF-ToHWAakyz2cU7I8?rlkey=w0k6ptkzje1l9me1x5sgygp0m&st=nja6x67a&dl=0). I'll also send this link out in a class announcement. 
+- Create a subfolder titled firstname_lastname (no spaces!)
+- Upload: PDF, HTML, and Rmd version of short slides and long slides
+- If you've changed your project, please upload new data to sharepoint folder
+- ***Due 3:30PM on Tuesday, December 10*** (i.e., 30 minutes before final period)
+
+---
+# In-class Presentations
+
+- We have 3 hours and 30 presentations to do
+- 5 minutes/presentation, 1 minute to do changeovers
+  - Hence, no questions
+  - In the real world, there are questions 
+- Shoot for 1 minute/slide
+  - I'll hold up a sheet of paper or something warning you when you have 1 minute left
+
+---
+class: inverse, center, middle
+
+# Drew's Presentation Tips
+
+<html><div style='float:left'></div><hr color='#EB811B' size=1px width=796px></html>
+
+---
+# Slides
+
+- Slides are a visual reference, the things you say are what matter
+--
+
+- Make your slides in a way that feels natural
+  - Go back over them and cut ~half the words out of your slides 
+  - You still probably have too many words
+--
+
+- Keep your slides simple
+  - 1 figure (graph or table)
+  - Limited bullet points
+  - Pretty is good but distracting is bad
+--
+
+- Slide titles
+--
+
+- Putting stuff on the slide iteratively can be helpful
+--
+
+- Or distracting
+--
+
+- Note: for ~20 slide presentation, this doesn't apply as much. Make sure it's legible for me and the grader, but more information is alright there
+
+---
+# Talking
+
+- Public speaking is hard! 
+- It is probably the most important skill you'll learn in college
+--
+
+- How would you describe your project if you had to explain it in a 5-minute elevator ride? 
+  - Presentation is a story
+--
+
+- Easier to keep takeaways from a slide to 1-3 main ideas 
+  - Some slides (Data) can be more: audiences wants to know details, doesn't need to keep track of them 
